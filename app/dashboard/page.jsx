@@ -11,6 +11,9 @@ import {
 } from 'recharts';
 import { Space_Grotesk, Inter } from "next/font/google";
 import axiosInstance from '../../utils/axios';
+import authService from '@/services/authService';
+import dashboardService from '@/services/dashboardService';
+import weatherService from '@/services/weatherService';
 import { useTheme } from '@/context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -33,13 +36,6 @@ const B = {
 const mono = "var(--font-mono)";
 const serif = "var(--font-display)";
 const sans = "var(--font-body)";
-
-const STATS_ENDPOINT = '/dashboard/stats';
-const MILK_PRODUCTION_ENDPOINT = '/dashboard/milk-production';
-const FINANCE_ENDPOINT = '/dashboard/finance';
-const USER_PROFILE_ENDPOINT = '/user/me';
-const WEATHER_CURRENT_ENDPOINT = '/weather/current';
-const WEATHER_DEFAULT_ENDPOINT = '/weather/default';
 
 // ✅ City name mapping for better display
 const cityMapping = {
@@ -86,10 +82,10 @@ export default function FarmDashboard() {
 
   const fetchUserProfile = async () => {
     try {
-      const response = await axiosInstance.get(USER_PROFILE_ENDPOINT);
-      if (response.data?.success) {
+      const data = await authService.getCurrentUser();
+      if (data?.success) {
         setUser({
-          name: response.data.data.name || 'Farmer'
+          name: data.data.name || 'Farmer'
         });
       }
     } catch (error) {
@@ -99,12 +95,10 @@ export default function FarmDashboard() {
 
   const fetchWeatherByCoords = async (lat, lon) => {
     try {
-      const response = await axiosInstance.get(WEATHER_CURRENT_ENDPOINT, {
-        params: { lat, lon }
-      });
+      const data = await weatherService.getWeatherByCoords(lat, lon);
 
-      if (response.data?.success) {
-        setWeather(response.data.data);
+      if (data?.success) {
+        setWeather(data.data);
         setWeatherError(false);
         return true;
       }
@@ -117,10 +111,10 @@ export default function FarmDashboard() {
 
   const fetchDefaultWeather = async () => {
     try {
-      const response = await axiosInstance.get(WEATHER_DEFAULT_ENDPOINT);
+      const data = await weatherService.getDefaultWeather();
 
-      if (response.data?.success) {
-        setWeather(response.data.data);
+      if (data?.success) {
+        setWeather(data.data);
         setWeatherError(false);
       } else {
         throw new Error("Failed to fetch default weather");
@@ -185,21 +179,21 @@ export default function FarmDashboard() {
       setLoading(true);
 
       const [statsRes, milkRes, financeRes] = await Promise.all([
-        axiosInstance.get(STATS_ENDPOINT),
-        axiosInstance.get(MILK_PRODUCTION_ENDPOINT),
-        axiosInstance.get(FINANCE_ENDPOINT)
+        dashboardService.getStats(),
+        dashboardService.getMilkProduction(),
+        dashboardService.getFinanceStats()
       ]);
 
-      if (statsRes.data?.success) {
-        setStats(statsRes.data.data);
+      if (statsRes?.success) {
+        setStats(statsRes.data);
       }
 
-      if (milkRes.data?.success) {
-        setMilkProductionData(milkRes.data.data);
+      if (milkRes?.success) {
+        setMilkProductionData(milkRes.data);
       }
 
-      if (financeRes.data?.success) {
-        setFinanceData(financeRes.data.data);
+      if (financeRes?.success) {
+        setFinanceData(financeRes.data);
       }
 
     } catch (error) {
@@ -220,7 +214,7 @@ export default function FarmDashboard() {
 
   const formattedStats = [
     {
-      title: 'Total Livestock',
+      title: 'Total Animals',
       value: stats.totalLivestock.toString(),
       subtitle: 'Heads',
       change: stats.change.livestock,

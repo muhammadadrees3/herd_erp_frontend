@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import Image from "next/image";
-import axiosInstance from "@/utils/axios";
+import authService from "@/services/authService";
 
 // ─── HerdERP Brand Tokens ─────────────────────────────────────────────────────
 const B = {
@@ -57,14 +57,14 @@ const Login = () => {
     e.preventDefault();
     setError(""); setSuccess(""); setLoading(true);
     try {
-      const response = await axiosInstance.post("/auth/login", formData);
+      const data = await authService.login(formData);
       setSuccess("Login successful! Redirecting...");
-      if (response.data.accessToken)
-        Cookies.set("accessToken", response.data.accessToken, { expires: 7, secure: true, sameSite: "Strict", path: "/" });
-      if (response.data.refreshToken)
-        Cookies.set("refreshToken", response.data.refreshToken, { expires: 30, secure: true, sameSite: "Strict", path: "/" });
-      if (response.data.user)
-        localStorage.setItem("user", JSON.stringify(response.data.user));
+      if (data.accessToken)
+        Cookies.set("accessToken", data.accessToken, { expires: 7, secure: true, sameSite: "Strict", path: "/" });
+      if (data.refreshToken)
+        Cookies.set("refreshToken", data.refreshToken, { expires: 30, secure: true, sameSite: "Strict", path: "/" });
+      if (data.user)
+        localStorage.setItem("user", JSON.stringify(data.user));
       setTimeout(() => { window.location.href = "/"; }, 1500);
     } catch (err) {
       setError(err.response?.data?.message || err.message || "Login failed");

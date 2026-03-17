@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Space_Grotesk } from "next/font/google";
 import axiosInstance from '@/utils/axios';
+import authService from '@/services/authService';
 import { useTheme } from '@/context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -29,9 +30,6 @@ const B = {
 };
 
 const mono = "var(--font-mono)";
-
-// ✅ API Base URL - only for file upload (needs FormData)
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
 
 export default function Navbar({
   sidebarOpen,
@@ -57,18 +55,18 @@ export default function Navbar({
     Authorization: `Bearer ${Cookies.get('accessToken')}`
   });
 
-  // Fetch user profile from backend using axiosInstance
+  // Fetch user profile from backend using authService
   const fetchUserProfile = async () => {
     try {
-      const response = await axiosInstance.get('/user/me');
-      if (response.data?.success) {
+      const data = await authService.getCurrentUser();
+      if (data?.success) {
         setUser({
-          name: response.data.data.name || 'User',
-          role: response.data.data.role || 'User',
-          profile_photo: response.data.data.profile_photo || null
+          name: data.data.name || 'User',
+          role: data.data.role || 'User',
+          profile_photo: data.data.profile_photo || null
         });
-        if (response.data.data.profile_photo) {
-          setProfilePhoto(response.data.data.profile_photo);
+        if (data.data.profile_photo) {
+          setProfilePhoto(data.data.profile_photo);
         }
       }
     } catch (error) {
@@ -100,16 +98,10 @@ export default function Navbar({
     formData.append('photo', file);
 
     try {
-      // ✅ File upload still needs axios with FormData
-      const response = await axiosInstance.post('/user/upload-photo', formData, {
-        headers: {
-          ...getHeaders(),
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      const data = await authService.updateProfilePhoto(formData);
 
-      if (response.data?.success) {
-        const photoUrl = response.data.data.profile_photo;
+      if (data?.success) {
+        const photoUrl = data.data.profile_photo;
         setProfilePhoto(photoUrl);
         setUser(prev => ({ ...prev, profile_photo: photoUrl }));
       }
@@ -128,12 +120,12 @@ export default function Navbar({
     setShowProfileMenu(false);
   };
 
-  // Updated logout function using axiosInstance
+  // Updated logout function using authService
   const handleLogout = async () => {
     try {
       const refreshToken = Cookies.get('refreshToken');
       if (refreshToken) {
-        await axiosInstance.post('/auth/logout', { token: refreshToken });
+        await authService.logout(refreshToken);
       }
       Cookies.remove('accessToken');
       Cookies.remove('refreshToken');
@@ -173,10 +165,11 @@ export default function Navbar({
           expandedState: livestockExpanded,
           setExpandedState: setLivestockExpanded,
           children: [
-            { name: 'Animals', route: '/livestockmanagement/animal/dashboard' },
-            { name: 'Species Management', route: '/livestockmanagement/species' },
-            { name: 'Health & Vaccination', route: '/livestockmanagement/health/veterinarians' },
-            { name: 'Reproduction', route: '/livestockmanagement/reproduction/dashboard' }
+            { name: 'Animals', route: '/dashboard/livestockmanagement/animal/animals' },
+            { name: 'Species Management', route: '/dashboard/livestockmanagement/species' },
+            { name: 'Breeds Management', route: '/dashboard/livestockmanagement/breeds' },
+            { name: 'Health & Vaccination', route: '/dashboard/livestockmanagement/health/veterinarians' },
+            { name: 'Reproduction', route: '/dashboard/livestockmanagement/reproduction/dashboard' }
           ]
         },
         {
@@ -186,32 +179,32 @@ export default function Navbar({
           expandedState: milkExpanded,
           setExpandedState: setMilkExpanded,
           children: [
-            { name: 'Sales Overview', route: '/milk-management/sales-overview' },
-            { name: 'Production', route: '/milk-management/production/dashboard' },
-            { name: 'Daily Records', route: '/milk-management/production/daily-records' },
-            { name: 'Analytics', route: '/milk-management/production/analytics' },
-            { name: 'Sales', route: '/milk-management/sales/dashboard' },
-            { name: 'Sales Records', route: '/milk-management/sales/records' },
-            { name: 'Usage', route: '/milk-management/sales/usage' },
-            { name: 'OTCS Dashboard', route: '/milk-management/otcs/dashboard' },
-            { name: 'OTCS Records', route: '/milk-management/otcs/records' }
+            { name: 'Sales Overview', route: '/dashboard/milk-management/sales-overview' },
+            { name: 'Production', route: '/dashboard/milk-management/production/dashboard' },
+            { name: 'Daily Records', route: '/dashboard/milk-management/production/daily-records' },
+            { name: 'Analytics', route: '/dashboard/milk-management/production/analytics' },
+            { name: 'Sales', route: '/dashboard/milk-management/sales/dashboard' },
+            { name: 'Sales Records', route: '/dashboard/milk-management/sales/records' },
+            { name: 'Usage', route: '/dashboard/milk-management/sales/usage' },
+            { name: 'OTCS Dashboard', route: '/dashboard/milk-management/otcs/dashboard' },
+            { name: 'OTCS Records', route: '/dashboard/milk-management/otcs/records' }
           ]
         },
-        { name: 'Inventory', icon: Package, route: '/inventory' },
-        { name: 'Finances', icon: DollarSign, route: '/finances' },
-        { name: 'Staff', icon: Users, route: '/staff' },
+        { name: 'Inventory', icon: Package, route: '/dashboard/inventory' },
+        { name: 'Finances', icon: DollarSign, route: '/dashboard/finances' },
+        { name: 'Staff', icon: Users, route: '/dashboard/staff' },
       ]
     },
     {
       section: 'RELATIONSHIPS',
       items: [
-        { name: 'Customers', icon: Users, route: '/customers' }
+        { name: 'Customers', icon: Users, route: '/dashboard/customers' }
       ]
     },
     {
       section: 'SYSTEM',
       items: [
-        { name: 'Subscription', icon: CreditCard, route: '/subscription' }
+        { name: 'Subscription', icon: CreditCard, route: '/dashboard/subscription' }
       ]
     }
   ];
@@ -219,7 +212,7 @@ export default function Navbar({
   return (
     <>
       {/* MODERNIZED SIDEBAR */}
-      <aside className={`fixed left-0 top-0 h-full ${sidebarOpen ? 'w-72' : 'w-20'} border-r transition-all duration-300 z-50 flex flex-col ${isDark
+      <aside className={`fixed left-0 top-0 h-full ${sidebarOpen ? 'w-72' : 'w-20'}  border-r transition-all duration-300 flex flex-col ${isDark
           ? 'bg-neutral-950 border-white/10'
           : 'bg-[#F5F0E8] border-neutral-200'
         }`}>
@@ -436,7 +429,7 @@ export default function Navbar({
       {/* Enhanced Arrow Toggle Button */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className={`fixed top-24 ${sidebarOpen ? 'left-[17.5rem]' : 'left-16'} z-50 p-2.5 border transition-all duration-300 shadow-lg hover:scale-110 backdrop-blur-md ${isDark
+        className={`fixed top-24 ${sidebarOpen ? 'left-[17.5rem]' : 'left-16'}  p-2.5 border transition-all duration-300 shadow-lg hover:scale-110 backdrop-blur-md ${isDark
             ? 'bg-neutral-900/80 border-green-500/20 hover:border-green-500/50 text-green-400'
             : 'bg-[#F5F0E8]/90 border-[#C49A2A]/20 hover:border-[#2E6B2E] text-stone-700 hover:text-[#2E6B2E]'
           }`}
@@ -450,7 +443,7 @@ export default function Navbar({
       </button>
 
       {/* MODERNIZED TOP NAVBAR */}
-      <header className={`sticky top-0 z-40 h-22 border-b backdrop-blur-xl ${isDark
+      <header className={`sticky top-0 h-22 z-50 border-b backdrop-blur-xl ${isDark
           ? 'bg-neutral-950/90 border-white/10'
           : 'bg-[#F5F0E8]/90 border-[#C49A2A]/20 shadow-sm'
         }`}>

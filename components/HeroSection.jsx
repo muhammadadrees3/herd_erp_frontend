@@ -57,7 +57,7 @@ export default function HerdERP() {
       </div>
 
       {/* ── NAVIGATION ── */}
-      <nav className="relative z-50 flex items-center justify-between px-10 py-8 max-w-[1600px] mx-auto">
+      {/* <nav className="relative z-50 flex items-center justify-between px-10 py-8 max-w-[1600px] mx-auto">
         <div className="flex items-center gap-2 group cursor-pointer">
           <div className="w-8 h-8 bg-emerald-500 rounded flex items-center justify-center rotate-3 group-hover:rotate-12 transition-transform">
             <LayoutGrid size={18} className="text-black" />
@@ -78,7 +78,7 @@ export default function HerdERP() {
             Get Started
           </button>
         </div>
-      </nav>
+      </nav> */}
 
       {/* ── HERO GRID ── */}
       <div className="relative z-10 grid lg:grid-cols-2 gap-0 min-h-[calc(100vh-100px)] items-center">

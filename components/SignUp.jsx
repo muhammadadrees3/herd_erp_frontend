@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import axios from "axios";
+import authService from "@/services/authService";
 import {
   Eye, EyeOff, ArrowRight, Shield, Zap,
   Lock, Mail, User, Building2, Activity, Database, HeartPulse,
@@ -26,8 +26,6 @@ const B = {
 const serif = "var(--font-display)";
 const sans = "var(--font-body)";
 const mono = "var(--font-mono)";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api";
 
 // ─── Wheat SVG ────────────────────────────────────────────────────────────────
 const WheatIcon = ({ color = B.wheatGold, size = 13 }) => (
@@ -92,8 +90,8 @@ export default function SignUp() {
         password,
         confirmPassword: formData.confirmPassword,
       };
-      const response = await axios.post(`${API_BASE_URL}/auth/register`, payload);
-      console.log("REGISTER_SUCCESS:", response.data);
+      const data = await authService.register(payload);
+      console.log("REGISTER_SUCCESS:", data);
       setSuccess("Account created! Redirecting to login…");
       setFormData({ fullName: "", farmName: "", email: "", password: "", confirmPassword: "" });
       setTimeout(() => { window.location.href = "/login"; }, 2000);

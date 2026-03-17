@@ -48,8 +48,7 @@ export default function RootLayout({
         <ThemeProvider>
           <NavigationProvider>
             {/* Navigation progress loader — renders above everything */}
-            {/* <NavigationLoader /> */}
-            {/* Header and Footer are handled by each section's nested layout */}
+        {/* Header and Footer are handled by each section's nested layout */}
             {children}
           </NavigationProvider>
         </ThemeProvider>
