@@ -408,7 +408,7 @@ export default function BreedingRecords() {
                   Dashboard
                 </button>
               </Link>
-              <Link href="/dashboard/livestockmanagement/reproduction/breeding">
+              {/* <Link href="/dashboard/livestockmanagement/reproduction/breeding">
                 <button
                   className={`cursor-pointer px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${isActive('/dashboard/livestockmanagement/reproduction/breeding')
                       ? isDark
@@ -421,7 +421,7 @@ export default function BreedingRecords() {
                 >
                   Breeding
                 </button>
-              </Link>
+              </Link> */}
               <Link href="/dashboard/livestockmanagement/reproduction/pregnancy">
                 <button
                   className={`cursor-pointer px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${isActive('/dashboard/livestockmanagement/reproduction/pregnancy')

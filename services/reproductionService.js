@@ -43,8 +43,8 @@ const reproductionService = {
     return response.data;
   },
 
-  updatePregnancyMilestones: async (id, milestones) => {
-    const response = await axiosInstance.patch(`/pregnancy/${id}/milestones`, milestones);
+  togglePregnancyMilestone: async (id, index) => {
+    const response = await axiosInstance.patch(`/pregnancy/milestone/${id}`, { index });
     return response.data;
   },
 

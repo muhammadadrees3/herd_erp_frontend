@@ -35,7 +35,8 @@ export default function DailyProductionRecords() {
   const pathname = usePathname();
 
   const [formData, setFormData] = useState({
-    animalName: '',
+    animalTagId: '',
+    animalName: '',  // optional display name kept for backward compat
     dateRecorded: new Date().toISOString().split('T')[0],
     recordedBy: '',
     morning: '',
@@ -134,6 +135,7 @@ export default function DailyProductionRecords() {
     if (record) {
       setEditingRecord(record);
       setFormData({
+        animalTagId: record.animalTagId || '',
         animalName: record.animalName || '',
         dateRecorded: record.dateRecorded || '',
         recordedBy: record.recordedBy || '',
@@ -147,6 +149,7 @@ export default function DailyProductionRecords() {
     } else {
       setEditingRecord(null);
       setFormData({
+        animalTagId: '',
         animalName: '',
         dateRecorded: new Date().toISOString().split('T')[0],
         recordedBy: '',
@@ -165,6 +168,7 @@ export default function DailyProductionRecords() {
     setShowAddForm(false);
     setEditingRecord(null);
     setFormData({
+      animalTagId: '',
       animalName: '',
       dateRecorded: new Date().toISOString().split('T')[0],
       recordedBy: '',
@@ -181,7 +185,7 @@ export default function DailyProductionRecords() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.animalName || !formData.dateRecorded || !formData.recordedBy) {
+    if (!formData.animalTagId || !formData.dateRecorded || !formData.recordedBy) {
       return;
     }
     
@@ -576,7 +580,7 @@ export default function DailyProductionRecords() {
                           Animal ID #{record.id || record._id}
                         </span>
                         <h3 className={`text-2xl font-bold uppercase tracking-tight ${spaceGrotesk.className}`}>
-                          {record.animalName}
+                          {record.animalTagId || record.animalName}
                         </h3>
                       </div>
                       
@@ -904,19 +908,19 @@ export default function DailyProductionRecords() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Animal Name */}
+            {/* Animal Tag ID */}
             <div>
               <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
                 isDark ? 'text-neutral-500' : 'text-neutral-400'
               }`}>
-                Animal Name *
+                Animal Tag ID *
               </label>
               <input
                 type="text"
                 required
-                value={formData.animalName}
-                onChange={(e) => setFormData({...formData, animalName: e.target.value})}
-                placeholder="Enter animal name"
+                value={formData.animalTagId}
+                onChange={(e) => setFormData({...formData, animalTagId: e.target.value})}
+                placeholder="Enter animal tag (e.g. COW-001)"
                 className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
                   isDark 
                     ? 'bg-neutral-900 border-white/10 focus:border-green-500 placeholder:text-neutral-600' 

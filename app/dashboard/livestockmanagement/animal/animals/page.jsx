@@ -44,7 +44,10 @@ export default function AnimalsManagement() {
     gender: 'Female',
     status: 'Active',
     healthStatus: 'Healthy',
+    breedId: '',
     breed: '',
+    motherId: '',
+    fatherId: '',
     shedId: '',
     shedName: '',
     registrationDate: new Date().toISOString().split('T')[0]
@@ -72,7 +75,12 @@ export default function AnimalsManagement() {
       gender: animal.gender || 'Female',
       status: animal.status || 'Active',
       healthStatus: animal.healthStatus || 'Healthy',
-      breed: animal.breed || '',
+      breedId: animal.breedId || animal.Breed?.id || '',
+      breed: animal.breed || animal.Breed?.name || '',
+      motherId: animal.motherId || animal.Mother?.id || '',
+      motherTagId: animal.Mother?.animalTagId || '',
+      fatherId: animal.fatherId || animal.Father?.id || '',
+      fatherTagId: animal.Father?.animalTagId || '',
       animalTagId: animal.animalTagId || animal.animal_tag_id || '',
       shedId: animal.Shed?.id || animal.shedId || animal.shed_id || '',
       shedName: animal.Shed?.shedName || animal.shedName || '',
@@ -229,7 +237,10 @@ export default function AnimalsManagement() {
         gender: animal.gender || 'Female',
         status: animal.status || 'Active',
         healthStatus: animal.healthStatus || 'Healthy',
+        breedId: animal.breedId || '',
         breed: animal.breed || '',
+        motherId: animal.motherId || '',
+        fatherId: animal.fatherId || '',
         shedId: animal.shedId || '',
         shedName: animal.shedName || '',
         registrationDate: animal.registrationDate || (animal.createdAt ? new Date(animal.createdAt).toISOString().split('T')[0] : '')
@@ -239,6 +250,7 @@ export default function AnimalsManagement() {
       const firstSpecies = (species && species.length > 0) ? (species[0].name || species[0]) : 'Cow';
       const availableBreeds = (breeds && breeds.length > 0) ? breeds.filter(b => (b.species || b.animalType) === firstSpecies) : [];
       const firstBreed = availableBreeds.length > 0 ? (availableBreeds[0].name || availableBreeds[0]) : (species && species.length > 0 ? '' : 'Unknown');
+      const firstBreedId = availableBreeds.length > 0 ? (availableBreeds[0].id || '') : '';
 
       setFormData({
         dateOfBirth: '',
@@ -246,7 +258,10 @@ export default function AnimalsManagement() {
         gender: 'Female',
         status: 'Active',
         healthStatus: 'Healthy',
+        breedId: firstBreedId,
         breed: firstBreed,
+        motherId: '',
+        fatherId: '',
         shedId: searchParams.get('shedId') || '',
         shedName: searchParams.get('shedName') ? decodeURIComponent(searchParams.get('shedName')) : '',
         registrationDate: new Date().toISOString().split('T')[0]
@@ -264,7 +279,10 @@ export default function AnimalsManagement() {
       gender: 'Female',
       status: 'Active',
       healthStatus: 'Healthy',
+      breedId: '',
       breed: '',
+      motherId: '',
+      fatherId: '',
       shedId: '',
       shedName: '',
       registrationDate: new Date().toISOString().split('T')[0]
@@ -285,7 +303,10 @@ export default function AnimalsManagement() {
       gender: formData.gender,
       status: formData.status,
       healthStatus: formData.healthStatus,
+      breedId: formData.breedId ? parseInt(formData.breedId) : null,
       breed: formData.breed,
+      motherId: formData.motherId ? parseInt(formData.motherId) : null,
+      fatherId: formData.fatherId ? parseInt(formData.fatherId) : null,
       shedId: formData.shedId,
       registrationDate: formData.registrationDate
     };
@@ -325,7 +346,10 @@ export default function AnimalsManagement() {
         gender: formData.gender,
         status: formData.status,
         healthStatus: formData.healthStatus,
+        breedId: formData.breedId,
         breed: formData.breed,
+        motherId: formData.motherId,
+        fatherId: formData.fatherId,
         shedId: formData.shedId,
         shedName: sheds.find(s => s.id.toString() === formData.shedId)?.shedName || formData.shedName,
         registrationDate: formData.registrationDate
@@ -1058,8 +1082,13 @@ export default function AnimalsManagement() {
           onChange={(e) => {
             const newAnimalType = e.target.value;
             const availableBreedsForType = breeds.filter(b => (b.species || b.animalType) === newAnimalType);
-            const firstBreed = availableBreedsForType.length > 0 ? (availableBreedsForType[0].name || availableBreedsForType[0]) : '';
-            setFormData({ ...formData, animalType: newAnimalType, breed: firstBreed });
+            const firstBreed = availableBreedsForType.length > 0 ? availableBreedsForType[0] : null;
+            setFormData({ 
+              ...formData, 
+              animalType: newAnimalType, 
+              breedId: firstBreed ? (firstBreed.id || '') : '',
+              breed: firstBreed ? (firstBreed.name || firstBreed) : '' 
+            });
           }}
           className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${isDark
               ? 'bg-neutral-900 border-white/10 focus:border-green-500'
@@ -1102,8 +1131,15 @@ export default function AnimalsManagement() {
         </label>
         <select
           required
-          value={formData.breed}
-          onChange={(e) => setFormData({ ...formData, breed: e.target.value })}
+          value={formData.breedId}
+          onChange={(e) => {
+            const selectedBreed = breeds.find(b => (b.id || b.name) == e.target.value);
+            setFormData({ 
+              ...formData, 
+              breedId: e.target.value,
+              breed: selectedBreed ? (selectedBreed.name || e.target.value) : ''
+            });
+          }}
           className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${isDark
               ? 'bg-neutral-900 border-white/10 focus:border-green-500'
               : 'bg-neutral-50 border-neutral-300 focus:border-green-500'
@@ -1112,7 +1148,51 @@ export default function AnimalsManagement() {
         >
           <option value="">Select a Breed</option>
           {breeds.filter(b => (b.species || b.animalType) === formData.animalType).map(br => (
-            <option key={br.id || br.name || br} value={br.name || br}>{br.name || br}</option>
+            <option key={br.id || br.name || br} value={br.id || br.name}>{br.name || br}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Mother (Optional) */}
+      <div>
+        <label className={`block text-[11px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${isDark ? 'text-neutral-400' : 'text-neutral-500'
+          }`}>
+          Mother (Optional)
+        </label>
+        <select
+          value={formData.motherId}
+          onChange={(e) => setFormData({ ...formData, motherId: e.target.value })}
+          className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${isDark
+              ? 'bg-neutral-900 border-white/10 focus:border-green-500'
+              : 'bg-neutral-50 border-neutral-300 focus:border-green-500'
+            }`}
+          disabled={submitting}
+        >
+          <option value="">None / Unknown</option>
+          {animals.filter(a => a.gender === 'Female' && (!editingAnimal || a.id !== editingAnimal.id)).map(a => (
+            <option key={a.id} value={a.id}>{a.animalTagId || a.id}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Father (Optional) */}
+      <div>
+        <label className={`block text-[11px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${isDark ? 'text-neutral-400' : 'text-neutral-500'
+          }`}>
+          Father (Optional)
+        </label>
+        <select
+          value={formData.fatherId}
+          onChange={(e) => setFormData({ ...formData, fatherId: e.target.value })}
+          className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${isDark
+              ? 'bg-neutral-900 border-white/10 focus:border-green-500'
+              : 'bg-neutral-50 border-neutral-300 focus:border-green-500'
+            }`}
+          disabled={submitting}
+        >
+          <option value="">None / Unknown</option>
+          {animals.filter(a => a.gender === 'Male' && (!editingAnimal || a.id !== editingAnimal.id)).map(a => (
+            <option key={a.id} value={a.id}>{a.animalTagId || a.id}</option>
           ))}
         </select>
       </div>

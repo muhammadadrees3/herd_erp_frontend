@@ -1,6 +1,7 @@
 "use client";
 import dynamic from "next/dynamic";
 import { useTheme } from "@/context/ThemeContext";
+import Header from "@/components/Header";
 
 // Lazy-load — heavy animated pricing cards
 const PricingCards = dynamic(() => import("@/components/cards/PricingCards"), {
@@ -20,6 +21,7 @@ export default function PricingPage() {
             }}
         >
             <div id="pricing">
+                <Header />
                 <PricingCards />
             </div>
         </div>

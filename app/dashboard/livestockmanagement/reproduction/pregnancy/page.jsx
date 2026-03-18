@@ -1,15 +1,17 @@
 "use client";
 
+import axiosInstance from '@/utils/axios';
+import Cookies from 'js-cookie';
+import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/dashboard/Navbar';
-import axiosInstance from '@/utils/axios';
+import animalService from '@/services/animalService';
+import healthService from '@/services/healthService';
 import reproductionService from '@/services/reproductionService';
-import Cookies from 'js-cookie';
 import { 
   Heart, Plus, Search, X, Calendar, Activity, Edit, Trash2
 } from 'lucide-react';
 import { Space_Grotesk, Inter } from "next/font/google";
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], weight: ["300", "500", "700"] });
@@ -30,7 +32,39 @@ export default function PregnancyTracking() {
   const [editingRecord, setEditingRecord] = useState(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [vets, setVets] = useState([]);
+  const [animals, setAnimals] = useState([]);
+  
   const pathname = usePathname();
+
+// Fetch Options for Dropdowns
+  const fetchOptions = async () => {
+    try {
+      const [animalsData, vetsData] = await Promise.all([
+        animalService.getAnimals(),
+        healthService.getVeterinarians()
+      ]);
+      
+      if (animalsData && animalsData.success && Array.isArray(animalsData.data)) {
+        setAnimals(animalsData.data);
+      } else if (Array.isArray(animalsData)) {
+        setAnimals(animalsData);
+      }
+      if (vetsData && vetsData.success && Array.isArray(vetsData.data)) {
+        setVets(vetsData.data);
+      } else if (Array.isArray(vetsData)) {
+        setVets(vetsData);
+      }
+    } catch (error) {
+      console.error("Error fetching options:", error);
+    }
+  };
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchOptions();
+  }, []);
+
 
   // ✅ Helper to get headers with token
   const getHeaders = () => ({
@@ -38,8 +72,7 @@ export default function PregnancyTracking() {
   });
 
   const [formData, setFormData] = useState({
-    animalName: '',
-    animalId: '',
+    animalTagId: '',
     breedingDate: '',
     dueDate: '',
     status: 'monitoring',
@@ -101,12 +134,23 @@ export default function PregnancyTracking() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => {
+      const newData = { ...prev, [name]: value };
+      
+      // Auto-calculate Due Date (280 days after Breeding Date)
+      if (name === 'breedingDate' && value) {
+        const date = new Date(value);
+        date.setDate(date.getDate() + 280);
+        newData.dueDate = date.toISOString().split('T')[0];
+      }
+      
+      return newData;
+    });
   };
 
   // Submit Data (Create or Update)
   const handleSubmit = async () => {
-    if (!formData.animalName || !formData.animalId || !formData.breedingDate || !formData.dueDate) {
+    if (!formData.animalTagId || !formData.breedingDate || !formData.dueDate) {
       return; // No alert
     }
     
@@ -149,8 +193,7 @@ export default function PregnancyTracking() {
       setStatusFilter('All Status');
       // Reset form data
       setFormData({
-        animalName: '',
-        animalId: '',
+        animalTagId: '',
         breedingDate: '',
         dueDate: '',
         status: 'monitoring',
@@ -194,8 +237,7 @@ export default function PregnancyTracking() {
       setSearchQuery('');
       setStatusFilter('All Status');
       setFormData({
-        animalName: '',
-        animalId: '',
+        animalTagId: '',
         breedingDate: '',
         dueDate: '',
         status: 'monitoring',
@@ -248,9 +290,7 @@ export default function PregnancyTracking() {
     updatedMilestones[milestoneIndex].completed = !updatedMilestones[milestoneIndex].completed;
 
     try {
-      await reproductionService.updatePregnancyMilestones(recordId, {
-        milestones: updatedMilestones
-      });
+      await reproductionService.togglePregnancyMilestone(recordId, milestoneIndex);
       const updatedRecords = pregnancyRecords.map(r => 
         (r.id || r._id) === recordId ? { ...r, milestones: updatedMilestones } : r
       );
@@ -315,8 +355,7 @@ export default function PregnancyTracking() {
     setStatusFilter('All Status');
     setEditingRecord(null);
     setFormData({
-      animalName: '',
-      animalId: '',
+      animalTagId: '',
       breedingDate: '',
       dueDate: '',
       status: 'monitoring',
@@ -330,8 +369,7 @@ export default function PregnancyTracking() {
   const handleEdit = (record) => {
     setEditingRecord(record);
     setFormData({
-      animalName: record.animalName,
-      animalId: record.animalId,
+      animalTagId: record.animalTagId,
       breedingDate: record.breedingDate,
       dueDate: record.dueDate,
       status: record.status,
@@ -354,8 +392,7 @@ export default function PregnancyTracking() {
   };
 
   const filteredRecords = pregnancyRecords.filter(record => {
-    const matchesSearch = (record.animalName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         (record.animalId || '').toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = (record.animalTagId || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'All Status' || record.status === statusFilter.toLowerCase();
     return matchesSearch && matchesStatus;
   });
@@ -466,7 +503,7 @@ export default function PregnancyTracking() {
                   Dashboard
                 </button>
               </Link>
-              <Link href="/dashboard/livestockmanagement/reproduction/breeding">
+              {/* <Link href="/dashboard/livestockmanagement/reproduction/breeding">
                 <button 
                   className={`px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
                     isActive('/dashboard/livestockmanagement/reproduction/breeding')
@@ -480,7 +517,8 @@ export default function PregnancyTracking() {
                 >
                   Breeding
                 </button>
-              </Link>
+              </Link> */}
+
               <Link href="/dashboard/livestockmanagement/reproduction/pregnancy">
                 <button 
                   className={`px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
@@ -663,9 +701,9 @@ export default function PregnancyTracking() {
                     {/* Header */}
                     <div className="flex justify-between items-start mb-4">
                       <div>
-                        <h3 className={`text-lg font-bold ${spaceGrotesk.className}`}>{record.animalName}</h3>
+                        <h3 className={`text-lg font-bold ${spaceGrotesk.className}`}>{record.animalTagId}</h3>
                         <p className={`text-sm font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                          ID: {record.animalId}
+                          TAG ID: {record.animalTagId}
                         </p>
                       </div>
                       <span className={`px-3 py-1 border text-[10px] font-bold font-mono uppercase tracking-wider ${
@@ -836,7 +874,7 @@ export default function PregnancyTracking() {
             {/* Modal Body */}
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div>
+                {/* <div>
                   <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
                     isDark ? 'text-neutral-500' : 'text-neutral-400'
                   }`}>
@@ -856,33 +894,8 @@ export default function PregnancyTracking() {
                     required
                     disabled={submitting}
                   />
-                </div>
-
-                <div>
-                  <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
-                    isDark ? 'text-neutral-500' : 'text-neutral-400'
-                  }`}>
-                    Animal ID *
-                  </label>
-                  <input
-                    type="text"
-                    name="animalId"
-                    value={formData.animalId}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
-                      isDark 
-                        ? 'bg-neutral-900 border-white/10 focus:border-purple-500 placeholder:text-neutral-600' 
-                        : 'bg-neutral-50 border-neutral-300 focus:border-purple-500 placeholder:text-neutral-400'
-                    }`}
-                    placeholder="Enter ID"
-                    required
-                    disabled={submitting}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
+                </div> */}
+                   <div>
                   <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
                     isDark ? 'text-neutral-500' : 'text-neutral-400'
                   }`}>
@@ -903,7 +916,40 @@ export default function PregnancyTracking() {
                   />
                 </div>
 
-                <div>
+                 <div>
+              <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
+                isDark ? 'text-neutral-500' : 'text-neutral-400'
+              }`}>
+                Animal Tag *
+              </label>
+              <select
+                required
+                value={formData.animalTagId}
+                onChange={(e) => setFormData({...formData, animalTagId: e.target.value})}
+                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
+                  isDark 
+                    ? 'bg-neutral-900 border-white/10 focus:border-blue-500' 
+                    : 'bg-neutral-50 border-neutral-300 focus:border-blue-500'
+                }`}
+                disabled={submitting}
+              >
+                <option value="" disabled>Select an animal tag</option>
+                {animals.map((animal, idx) => {
+                  const val = typeof animal === 'object' ? (animal.animalTagId || animal.Animal_Tag_ID || animal.name || animal.id || '') : animal;
+                  return (
+                    <option key={idx} value={val}>
+                      {val}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+             
+
+                 <div>
                   <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
                     isDark ? 'text-neutral-500' : 'text-neutral-400'
                   }`}>
@@ -922,7 +968,7 @@ export default function PregnancyTracking() {
                     required
                     disabled={submitting}
                   />
-                </div>
+                </div> 
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -971,26 +1017,33 @@ export default function PregnancyTracking() {
                 </div>
               </div>
 
-              <div>
-                <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
-                  isDark ? 'text-neutral-500' : 'text-neutral-400'
-                }`}>
-                  Veterinarian
-                </label>
-                <input
-                  type="text"
-                  name="veterinarian"
-                  value={formData.veterinarian}
-                  onChange={handleInputChange}
-                  className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
-                    isDark 
-                      ? 'bg-neutral-900 border-white/10 focus:border-purple-500 placeholder:text-neutral-600' 
-                      : 'bg-neutral-50 border-neutral-300 focus:border-purple-500 placeholder:text-neutral-400'
-                  }`}
-                  placeholder="Enter veterinarian name"
-                  disabled={submitting}
-                />
-              </div>
+      <div>
+              <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
+                isDark ? 'text-neutral-500' : 'text-neutral-400'
+              }`}>
+                Administered By / Veterinarian Name
+              </label>
+              <select
+                value={formData.veterinarian}
+                onChange={(e) => setFormData({...formData, veterinarian: e.target.value})}
+                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
+                  isDark 
+                    ? 'bg-neutral-900 border-white/10 focus:border-blue-500' 
+                    : 'bg-neutral-50 border-neutral-300 focus:border-blue-500'
+                }`}
+                disabled={submitting}
+              >
+                <option value="">Select a veterinarian</option>
+                {vets.map((v, idx) => {
+                  const val = typeof v === 'object' ? (v.name || v.id || '') : v;
+                  return (
+                    <option key={idx} value={val}>
+                      {val}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
 
               {/* Modal Footer */}
               <div className="flex gap-3 pt-4">

@@ -39,7 +39,7 @@ export default function VaccinationsManagement() {
   const [vaccines, setVaccines] = useState([]);
   const [vets, setVets] = useState([]);
   const [formData, setFormData] = useState({
-    name: '',
+    animalTagId: '',
     vaccine: '',
     vaccinationLogDate: '',
     nextDueDate: '',
@@ -169,7 +169,7 @@ export default function VaccinationsManagement() {
     if (vaccination) {
       setEditingVaccination(vaccination);
       setFormData({
-        name: vaccination.name || '',
+        animalTagId: vaccination.animalTagId || vaccination.name || '',
         vaccine: vaccination.vaccine || '',
         vaccinationLogDate: vaccination.vaccinationLogDate || vaccination.dateGiven || new Date().toISOString().split('T')[0],
         nextDueDate: vaccination.nextDueDate || '',
@@ -179,7 +179,7 @@ export default function VaccinationsManagement() {
     } else {
       setEditingVaccination(null);
       setFormData({
-        name: '',
+        animalTagId: '',
         vaccine: '',
         vaccinationLogDate: new Date().toISOString().split('T')[0],
         nextDueDate: new Date().toISOString().split('T')[0],
@@ -195,7 +195,7 @@ export default function VaccinationsManagement() {
     setEditingVaccination(null);
     setErrorMsg('');
     setFormData({
-      name: '',
+      animalTagId: '',
       vaccine: '',
       vaccinationLogDate: new Date().toISOString().split('T')[0],
       nextDueDate: '',
@@ -208,8 +208,8 @@ export default function VaccinationsManagement() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.vaccine || !formData.vaccinationLogDate) {
-      setErrorMsg('Please fill in all required fields: Animal Tag, Vaccine, and Log Date.');
+    if (!formData.animalTagId || !formData.vaccine || !formData.vaccinationLogDate) {
+      setErrorMsg('Please fill in all required fields: Animal Tag ID, Vaccine, and Log Date.');
       return;
     }
 
@@ -261,7 +261,7 @@ export default function VaccinationsManagement() {
       // Fallback to localStorage if API fails
       const newVaccination = {
         id: editingVaccination ? (editingVaccination.id || editingVaccination._id) : Date.now(),
-        name: formData.name,
+        animalTagId: formData.animalTagId,
         vaccine: formData.vaccine,
         vaccinationLogDate: formData.vaccinationLogDate,
         nextDueDate: formData.nextDueDate,
@@ -684,7 +684,7 @@ export default function VaccinationsManagement() {
                         }`}>
                           Animal Tag
                         </span>
-                        <h3 className={`text-base font-bold ${spaceGrotesk.className}`}>{vaccination.name}</h3>
+                        <h3 className={`text-base font-bold ${spaceGrotesk.className}`}>{vaccination.animalTagId || vaccination.name}</h3>
                       </div>
 
                       {/* Vaccine */}
@@ -975,8 +975,8 @@ export default function VaccinationsManagement() {
               </label>
               <select
                 required
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                value={formData.animalTagId}
+                onChange={(e) => setFormData({...formData, animalTagId: e.target.value})}
                 className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
                   isDark 
                     ? 'bg-neutral-900 border-white/10 focus:border-blue-500' 

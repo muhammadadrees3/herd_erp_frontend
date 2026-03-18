@@ -438,7 +438,7 @@ export default function DryOffManagement() {
                   Dashboard
                 </button>
               </Link>
-              <Link href="/dashboard/livestockmanagement/reproduction/breeding">
+              {/* <Link href="/dashboard/livestockmanagement/reproduction/breeding">
                 <button 
                   className={`px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
                     isActive('/dashboard/livestockmanagement/reproduction/breeding')
@@ -452,7 +452,7 @@ export default function DryOffManagement() {
                 >
                   Breeding
                 </button>
-              </Link>
+              </Link> */}
               <Link href="/dashboard/livestockmanagement/reproduction/pregnancy">
                 <button 
                   className={`px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${

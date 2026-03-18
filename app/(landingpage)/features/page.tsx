@@ -1,6 +1,7 @@
 "use client";
 import dynamic from "next/dynamic";
 import { useTheme } from "@/context/ThemeContext";
+import Header from "@/components/Header";
 
 // Lazy-load for performance — code-splits the heavy carousel component
 const FeatureCards = dynamic(() => import("@/components/cards/FeatureCards"), {
@@ -20,6 +21,7 @@ export default function FeaturesPage() {
             }}
         >
             <div id="feature-cards">
+                <Header />
                 <FeatureCards />
             </div>
         </div>

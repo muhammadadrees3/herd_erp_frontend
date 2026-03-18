@@ -256,7 +256,7 @@ export default function ReproductionDashboard() {
                   Dashboard
                 </button>
               </Link>
-              <Link href="/dashboard/livestockmanagement/reproduction/breeding">
+              {/* <Link href="/dashboard/livestockmanagement/reproduction/breeding">
                 <button 
                   className={`px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
                     isActive('/dashboard/livestockmanagement/reproduction/breeding')
@@ -270,7 +270,7 @@ export default function ReproductionDashboard() {
                 >
                   Breeding
                 </button>
-              </Link>
+              </Link> */}
               <Link href="/dashboard/livestockmanagement/reproduction/pregnancy">
                 <button 
                   className={`px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
@@ -483,7 +483,7 @@ export default function ReproductionDashboard() {
                   </h3>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <Link href="/livestockmanagement/reproduction/breeding">
+                  {/* <Link href="/dashboard/livestockmanagement/reproduction/breeding">
                     <div className={`p-4 border text-center cursor-pointer transition-all ${
                       isDark 
                         ? 'bg-white/5 border-white/10 hover:bg-green-500/10 hover:border-green-500/20' 
@@ -494,8 +494,8 @@ export default function ReproductionDashboard() {
                         Breeding
                       </span>
                     </div>
-                  </Link>
-                  <Link href="/livestockmanagement/reproduction/pregnancy">
+                  </Link> */}
+                  <Link href="/dashboard/livestockmanagement/reproduction/pregnancy">
                     <div className={`p-4 border text-center cursor-pointer transition-all ${
                       isDark 
                         ? 'bg-white/5 border-white/10 hover:bg-pink-500/10 hover:border-pink-500/20' 
@@ -507,7 +507,7 @@ export default function ReproductionDashboard() {
                       </span>
                     </div>
                   </Link>
-                  <Link href="/livestockmanagement/reproduction/dryoff">
+                  <Link href="/dashboard/livestockmanagement/reproduction/dryoff">
                     <div className={`p-4 border text-center cursor-pointer transition-all ${
                       isDark 
                         ? 'bg-white/5 border-white/10 hover:bg-cyan-500/10 hover:border-cyan-500/20' 
@@ -519,7 +519,7 @@ export default function ReproductionDashboard() {
                       </span>
                     </div>
                   </Link>
-                  <div className={`p-4 border text-center cursor-pointer transition-all ${
+                  {/* <div className={`p-4 border text-center cursor-pointer transition-all ${
                     isDark 
                       ? 'bg-white/5 border-white/10 opacity-50' 
                       : 'bg-neutral-50 border-neutral-200 opacity-50'
@@ -528,7 +528,7 @@ export default function ReproductionDashboard() {
                     <span className={`text-xs font-bold ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}>
                       Reports
                     </span>
-                  </div>
+                  </div> */}
                 </div>
                 <CornerBrackets />
               </div>

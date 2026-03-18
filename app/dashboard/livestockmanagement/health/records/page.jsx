@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/dashboard/Navbar';
 import axiosInstance from '@/utils/axios';
 import healthService from '@/services/healthService';
+import animalService from '@/services/animalService';
 import Cookies from 'js-cookie';
 import { 
   Home, Search, Filter, Plus, Eye, Edit, Trash2, ChevronDown, X, Activity
@@ -34,6 +35,7 @@ export default function HealthRecordsManagement() {
   const [statuses, setStatuses] = useState(['Healthy', 'Sick']);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
+    animalTagId: '',
     animalSpecies: '',
     animalBreed: '',
     diagnosis: '',
@@ -41,8 +43,10 @@ export default function HealthRecordsManagement() {
     status: 'Sick',
     nextCheckupDate: '',
     veterinarian: '',
-    animalId: ''
+    veterinarianId: null
   });
+  const [animals, setAnimals] = useState([]);
+  const [vets, setVets] = useState([]);
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -61,6 +65,7 @@ export default function HealthRecordsManagement() {
     return {
       id: record.id || record._id,
       date: record.date || '',
+      animalTagId: record.animalTagId || record.animalTag || '',
       animalSpecies: record.animalSpecies || '',
       animalBreed: record.animalBreed || '',
       diagnosis: record.diagnosis || '',
@@ -68,6 +73,7 @@ export default function HealthRecordsManagement() {
       status: record.status || 'Sick',
       nextCheckupDate: record.nextCheckupDate || '',
       veterinarian: record.veterinarian || '',
+      veterinarianId: record.veterinarianId || null,
       createdDate: record.createdAt ? new Date(record.createdAt).toLocaleDateString() : '',
       createdAt: record.createdAt,
       updatedAt: record.updatedAt
@@ -121,15 +127,40 @@ export default function HealthRecordsManagement() {
     }
   };
 
+  // Fetch Animals for dropdown
+  const fetchAnimals = async () => {
+    try {
+      const data = await animalService.getAnimals();
+      if (data && data.success) {
+        setAnimals(data.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching animals:", error);
+    }
+  };
+
+  // Fetch Veterinarians for dropdown
+  const fetchVets = async () => {
+    try {
+      const data = await healthService.getVeterinarians();
+      if (data && data.success) {
+        setVets(data.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching veterinarians:", error);
+    }
+  };
+
   // Initial data fetch
   useEffect(() => {
     fetchHealthRecords();
+    fetchAnimals();
+    fetchVets();
   }, []);
 
   // Handle URL parameters
   useEffect(() => {
     const addRecord = searchParams.get('addRecord');
-    const animalId = searchParams.get('animalId');
     const species = searchParams.get('species');
     const breed = searchParams.get('breed');
 
@@ -137,7 +168,6 @@ export default function HealthRecordsManagement() {
       setShowRecordForm(true);
       setFormData(prev => ({
         ...prev,
-        animalId: animalId || '',
         animalSpecies: species ? decodeURIComponent(species) : '',
         animalBreed: breed ? decodeURIComponent(breed) : '',
         status: 'Sick' // Default when coming from sick animal redirect
@@ -155,7 +185,7 @@ export default function HealthRecordsManagement() {
 
   const filteredRecords = healthRecords.filter(record => {
     const matchesSearch = 
-      (record.animalName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (record.animalTagId?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
       (record.diagnosis?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
       (record.treatment?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
       (record.veterinarian?.toLowerCase() || '').includes(searchTerm.toLowerCase());
@@ -172,6 +202,7 @@ export default function HealthRecordsManagement() {
       setEditingRecord(record);
       setFormData({
         date: record.date || '',
+        animalTagId: record.animalTagId || '',
         animalSpecies: record.animalSpecies || '',
         animalBreed: record.animalBreed || '',
         diagnosis: record.diagnosis || '',
@@ -179,12 +210,13 @@ export default function HealthRecordsManagement() {
         status: record.status || 'Sick',
         nextCheckupDate: record.nextCheckupDate || '',
         veterinarian: record.veterinarian || '',
-        animalId: record.animalId || ''
+        veterinarianId: record.veterinarianId || null
       });
     } else {
       setEditingRecord(null);
       setFormData({
         date: new Date().toISOString().split('T')[0],
+        animalTagId: '',
         animalSpecies: '',
         animalBreed: '',
         diagnosis: '',
@@ -192,10 +224,38 @@ export default function HealthRecordsManagement() {
         status: 'Sick',
         nextCheckupDate: '',
         veterinarian: '',
-        animalId: ''
+        veterinarianId: null
       });
     }
     setShowRecordForm(true);
+  };
+
+  const handleAnimalChange = (tag) => {
+    const selectedAnimal = animals.find(a => a.animalTagId === tag);
+    if (selectedAnimal) {
+      setFormData(prev => ({
+        ...prev,
+        animalTagId: tag,
+        animalSpecies: selectedAnimal.animalType || '',
+        animalBreed: selectedAnimal.breed || ''
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        animalTagId: tag,
+        animalSpecies: '',
+        animalBreed: ''
+      }));
+    }
+  };
+
+  const handleVetChange = (vetId) => {
+    const selectedVet = vets.find(v => v.id === parseInt(vetId));
+    setFormData(prev => ({
+      ...prev,
+      veterinarianId: vetId ? parseInt(vetId) : null,
+      veterinarian: selectedVet ? selectedVet.name : ''
+    }));
   };
 
   const handleCloseForm = () => {
@@ -203,6 +263,7 @@ export default function HealthRecordsManagement() {
     setEditingRecord(null);
     setFormData({
       date: new Date().toISOString().split('T')[0],
+      animalTagId: '',
       animalSpecies: '',
       animalBreed: '',
       diagnosis: '',
@@ -210,7 +271,7 @@ export default function HealthRecordsManagement() {
       status: 'Sick',
       nextCheckupDate: '',
       veterinarian: '',
-      animalId: ''
+      veterinarianId: null
     });
   };
 
@@ -218,7 +279,7 @@ export default function HealthRecordsManagement() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.date || !formData.animalSpecies || !formData.diagnosis || !formData.treatment) {
+    if (!formData.date || !formData.animalTagId || !formData.diagnosis || !formData.treatment) {
       return;
     }
     
@@ -677,14 +738,26 @@ export default function HealthRecordsManagement() {
                   }`}>
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
                       {/* Date */}
-                      <div className="md:col-span-2">
+                      <div className="md:col-span-1">
                         <span className={`text-[9px] font-mono font-bold uppercase tracking-[0.25em] block mb-2 ${
                           isDark ? 'text-neutral-500' : 'text-neutral-400'
                         }`}>
                           Date
                         </span>
-                        <p className={`text-sm font-medium ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}>
+                        <p className={`text-[13px] font-medium ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}>
                           {record.date}
+                        </p>
+                      </div>
+
+                      {/* Animal Tag */}
+                      <div className="md:col-span-1">
+                        <span className={`text-[9px] font-mono font-bold uppercase tracking-[0.25em] block mb-2 ${
+                          isDark ? 'text-neutral-500' : 'text-neutral-400'
+                        }`}>
+                          Tag
+                        </span>
+                        <p className={`text-[13px] font-bold ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                          {record.animalTag}
                         </p>
                       </div>
 
@@ -741,9 +814,9 @@ export default function HealthRecordsManagement() {
                         <span className={`text-[9px] font-mono font-bold uppercase tracking-[0.25em] block mb-2 ${
                           isDark ? 'text-neutral-500' : 'text-neutral-400'
                         }`}>
-                          Next Checkup
+                          Next
                         </span>
-                        <p className={`text-sm font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+                        <p className={`text-[13px] font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
                           {record.nextCheckupDate || '-'}
                         </p>
                       </div>
@@ -886,50 +959,71 @@ export default function HealthRecordsManagement() {
               />
             </div>
 
-            {/* Animal Species */}
+            {/* Animal Tag */}
             <div>
               <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
                 isDark ? 'text-neutral-500' : 'text-neutral-400'
               }`}>
-                Animal Species *
+                Animal Tag *
               </label>
-              <input
-                type="text"
+              <select
                 required
-                readOnly={!!searchParams.get('species')}
-                value={formData.animalSpecies}
-                onChange={(e) => setFormData({...formData, animalSpecies: e.target.value})}
-                placeholder="Enter animal species"
-                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
+                value={formData.animalTagId}
+                onChange={(e) => handleAnimalChange(e.target.value)}
+                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium appearance-none ${
                   isDark 
-                    ? 'bg-neutral-900 border-white/10 focus:border-green-500 placeholder:text-neutral-600' 
-                    : 'bg-neutral-50 border-neutral-300 focus:border-green-500 placeholder:text-neutral-400'
-                } ${searchParams.get('species') ? 'opacity-70 cursor-not-allowed' : ''}`}
+                    ? 'bg-neutral-900 border-white/10 focus:border-green-500 text-white' 
+                    : 'bg-neutral-50 border-neutral-300 focus:border-green-500 text-neutral-900'
+                }`}
                 disabled={submitting}
-              />
+              >
+                <option value="">Select Animal Tag</option>
+                {animals.map(animal => (
+                  <option key={animal.id} value={animal.animalTagId}>
+                    {animal.animalTagId}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {/* Animal Breed */}
-            <div>
-              <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
-                isDark ? 'text-neutral-500' : 'text-neutral-400'
-              }`}>
-                Animal Breed *
-              </label>
-              <input
-                type="text"
-                required
-                readOnly={!!searchParams.get('breed')}
-                value={formData.animalBreed}
-                onChange={(e) => setFormData({...formData, animalBreed: e.target.value})}
-                placeholder="Enter animal breed"
-                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
-                  isDark 
-                    ? 'bg-neutral-900 border-white/10 focus:border-green-500 placeholder:text-neutral-600' 
-                    : 'bg-neutral-50 border-neutral-300 focus:border-green-500 placeholder:text-neutral-400'
-                } ${searchParams.get('breed') ? 'opacity-70 cursor-not-allowed' : ''}`}
-                disabled={submitting}
-              />
+            {/* Animal Species & Breed (Auto-filled) */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
+                  isDark ? 'text-neutral-500' : 'text-neutral-400'
+                }`}>
+                  Animal Species
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  value={formData.animalSpecies}
+                  placeholder="Auto-filled"
+                  className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
+                    isDark 
+                      ? 'bg-neutral-800 border-white/10 text-neutral-400' 
+                      : 'bg-neutral-200 border-neutral-300 text-neutral-600'
+                  }`}
+                />
+              </div>
+              <div>
+                <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
+                  isDark ? 'text-neutral-500' : 'text-neutral-400'
+                }`}>
+                  Animal Breed
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  value={formData.animalBreed}
+                  placeholder="Auto-filled"
+                  className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
+                    isDark 
+                      ? 'bg-neutral-800 border-white/10 text-neutral-400' 
+                      : 'bg-neutral-200 border-neutral-300 text-neutral-600'
+                  }`}
+                />
+              </div>
             </div>
 
 
@@ -1029,18 +1123,23 @@ export default function HealthRecordsManagement() {
               }`}>
                 Veterinarian
               </label>
-              <input
-                type="text"
-                value={formData.veterinarian}
-                onChange={(e) => setFormData({...formData, veterinarian: e.target.value})}
-                placeholder="Enter veterinarian name"
-                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
-                  isDark 
-                    ? 'bg-neutral-900 border-white/10 focus:border-green-500 placeholder:text-neutral-600' 
-                    : 'bg-neutral-50 border-neutral-300 focus:border-green-500 placeholder:text-neutral-400'
-                }`}
+              <select
+                value={formData.veterinarianId || ''}
+                onChange={(e) => handleVetChange(e.target.value)}
+                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium appearance-none ${
+                    isDark 
+                      ? 'bg-neutral-900 border-white/10 focus:border-green-500 text-white' 
+                      : 'bg-neutral-50 border-neutral-300 focus:border-green-500 text-neutral-900'
+                  }`}
                 disabled={submitting}
-              />
+              >
+                <option value="">Select Veterinarian</option>
+                {vets.map(vet => (
+                  <option key={vet.id} value={vet.id}>
+                    {vet.name} {vet.specialization ? `(${vet.specialization})` : ''}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Buttons */}
@@ -1089,7 +1188,7 @@ export default function HealthRecordsManagement() {
                 Delete Health Record?
               </h3>
               <p className={`text-sm font-medium mb-8 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                Are you sure you want to delete this health record for "{deleteConfirm.animalName}"? This action cannot be undone.
+                Are you sure you want to delete this health record for "{deleteConfirm.animalTag}"? This action cannot be undone.
               </p>
               <div className="flex gap-3">
                 <button
@@ -1173,10 +1272,10 @@ export default function HealthRecordsManagement() {
                   <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${
                     isDark ? 'text-neutral-500' : 'text-neutral-400'
                   }`}>
-                    Species / Breed
+                    Animal Tag / Species / Breed
                   </label>
                   <p className={`text-lg font-bold ${spaceGrotesk.className}`}>
-                    {viewingRecord.animalSpecies} / {viewingRecord.animalBreed}
+                    {viewingRecord.animalTag} / {viewingRecord.animalSpecies} / {viewingRecord.animalBreed}
                   </p>
                 </div>
 

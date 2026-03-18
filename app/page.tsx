@@ -22,6 +22,7 @@ export default function Home() {
         }}
       >
         <div id="hero">
+          <Header />
           <HeroSection />
         </div>
         {/* <ActivityTicker /> */}

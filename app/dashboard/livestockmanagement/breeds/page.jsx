@@ -36,7 +36,7 @@ export default function BreedManagement() {
   const [rowsPerPage, setRowsPerPage] = useState(6);
   const [formData, setFormData] = useState({
     name: '',
-    species: 'Cattle',
+    speciesId: '',
     origin: '',
     description: '',
     purpose: '',
@@ -122,7 +122,7 @@ export default function BreedManagement() {
   };
 
   const createBreed = async () => {
-    if (!formData.name || !formData.species) {
+    if (!formData.name || !formData.speciesId) {
       return;
     }
 
@@ -158,7 +158,7 @@ export default function BreedManagement() {
   };
 
   const updateBreed = async () => {
-    if (!formData.name || !formData.species || !editingBreed) {
+    if (!formData.name || !formData.speciesId || !editingBreed) {
       return;
     }
 
@@ -230,7 +230,9 @@ export default function BreedManagement() {
 
   const filteredBreeds = breeds.filter(b => {
     const matchesSearch = (b.name?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-    const matchesSpecies = selectedSpecies === 'all' || b.species === selectedSpecies;
+    // Match by speciesId or fallback to legacy species string
+    const breedSpeciesName = speciesList.find(s => s.id === b.speciesId)?.name || b.species || '';
+    const matchesSpecies = selectedSpecies === 'all' || breedSpeciesName === selectedSpecies;
     return matchesSearch && matchesSpecies;
   });
 
@@ -249,7 +251,7 @@ export default function BreedManagement() {
       setEditingBreed(breedItem);
       setFormData({
         name: breedItem.name || '',
-        species: breedItem.species || 'Cattle',
+        speciesId: breedItem.speciesId || breedItem.species_id || '',
         origin: breedItem.origin || '',
         description: breedItem.description || '',
         purpose: breedItem.purpose || '',
@@ -259,7 +261,7 @@ export default function BreedManagement() {
       setEditingBreed(null);
       setFormData({
         name: '',
-        species: 'Cattle',
+        speciesId: speciesList.length > 0 ? speciesList[0].id : '',
         origin: '',
         description: '',
         purpose: '',
@@ -274,7 +276,7 @@ export default function BreedManagement() {
     setEditingBreed(null);
     setFormData({
       name: '',
-      species: 'Cattle',
+      speciesId: speciesList.length > 0 ? speciesList[0].id : '',
       origin: '',
       description: '',
       purpose: '',
@@ -625,7 +627,7 @@ export default function BreedManagement() {
                           ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                           : 'bg-amber-50 text-amber-700 border-amber-200'
                       }`}>
-                        {breedItem.species}
+                        {speciesList.find(s => s.id === breedItem.speciesId)?.name || breedItem.species || '—'}
                       </span>
                     </div>
 
@@ -894,17 +896,19 @@ export default function BreedManagement() {
                     Species *
                   </label>
                   <select
-                    value={formData.species}
-                    onChange={(e) => setFormData({...formData, species: e.target.value})}
+                    value={formData.speciesId}
+                    onChange={(e) => setFormData({...formData, speciesId: parseInt(e.target.value) || e.target.value})}
                     className={`cursor-pointer w-full px-4 py-3.5 border outline-none transition-all font-medium ${
                       isDark 
                         ? 'bg-neutral-900 border-white/10 focus:border-amber-500' 
                         : 'bg-neutral-50 border-neutral-300 focus:border-amber-500'
                     }`}
+                    required
                     disabled={submitting}
                   >
+                    <option value="">Select species...</option>
                     {speciesList.map((s) => (
-                      <option key={s.id || s._id} value={s.name}>
+                      <option key={s.id || s._id} value={s.id}>
                         {s.name}
                       </option>
                     ))}

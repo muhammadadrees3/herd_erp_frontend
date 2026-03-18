@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/dashboard/Navbar';
 import axiosInstance from '@/utils/axios';
 import healthService from '@/services/healthService';
+import animalService from '@/services/animalService';
 import Cookies from 'js-cookie';
 import { 
   Home, Search, Filter, Plus, Eye, Edit, Trash2, ChevronDown, X, Syringe
@@ -33,10 +34,17 @@ export default function VaccinesManagement() {
   const [rotations, setRotations] = useState(['1', '2', '3', '4', '5', '6']);
   const [formData, setFormData] = useState({
     name: '',
-    rotation: '',
-    interval: '',
-    description: ''
+    diseasePurpose: '',
+    applicableSpecies: '',
+    dosage: '',
+    numberDoses: '',
+    doseInterval: '',
+    firstDoseAge: '',
+    description: '',
+    manufacturer: '',
+    status: 'active'
   });
+  const [speciesList, setSpeciesList] = useState([]);
   const pathname = usePathname();
 
   // --- VACCINES DATA ---
@@ -89,9 +97,22 @@ export default function VaccinesManagement() {
     }
   };
 
+  // Fetch Species for dropdown
+  const fetchSpecies = async () => {
+    try {
+      const data = await animalService.getSpecies();
+      if (data && data.success) {
+        setSpeciesList(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching species:", error);
+    }
+  };
+
   // Initial data fetch
   useEffect(() => {
     fetchVaccines();
+    fetchSpecies();
   }, []);
 
   // Save to localStorage whenever vaccines change (backup)
@@ -115,17 +136,29 @@ export default function VaccinesManagement() {
       setEditingVaccine(vaccine);
       setFormData({
         name: vaccine.name || '',
-        rotation: vaccine.rotation?.toString() || '',
-        interval: vaccine.interval || '',
-        description: vaccine.description || ''
+        diseasePurpose: vaccine.diseasePurpose || '',
+        applicableSpecies: vaccine.applicableSpecies || '',
+        dosage: vaccine.dosage || '',
+        numberDoses: vaccine.numberDoses?.toString() || '',
+        doseInterval: vaccine.doseInterval || '',
+        firstDoseAge: vaccine.firstDoseAge || '',
+        description: vaccine.description || '',
+        manufacturer: vaccine.manufacturer || '',
+        status: vaccine.status || 'active'
       });
     } else {
       setEditingVaccine(null);
       setFormData({
         name: '',
-        rotation: '',
-        interval: '',
-        description: ''
+        diseasePurpose: '',
+        applicableSpecies: '',
+        dosage: '',
+        numberDoses: '',
+        doseInterval: '',
+        firstDoseAge: '',
+        description: '',
+        manufacturer: '',
+        status: 'active'
       });
     }
     setShowVaccineForm(true);
@@ -136,9 +169,15 @@ export default function VaccinesManagement() {
     setEditingVaccine(null);
     setFormData({
       name: '',
-      rotation: '',
-      interval: '',
-      description: ''
+      diseasePurpose: '',
+      applicableSpecies: '',
+      dosage: '',
+      numberDoses: '',
+      doseInterval: '',
+      firstDoseAge: '',
+      description: '',
+      manufacturer: '',
+      status: 'active'
     });
   };
 
@@ -146,8 +185,11 @@ export default function VaccinesManagement() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.rotation || !formData.interval || !formData.description) {
-      return;
+    const requiredFields = ["name", "diseasePurpose", "applicableSpecies", "dosage", "numberDoses", "doseInterval"];
+    for (const field of requiredFields) {
+      if (!formData[field]) {
+        return; // Potential toast or error message here
+      }
     }
     
     setSubmitting(true);
@@ -156,7 +198,7 @@ export default function VaccinesManagement() {
       if (editingVaccine) {
         const data = await healthService.updateVaccine(editingVaccine.id || editingVaccine._id, {
           ...formData,
-          rotation: parseInt(formData.rotation)
+          numberDoses: parseInt(formData.numberDoses)
         });
         if (data && data.success) {
           await fetchVaccines();
@@ -164,7 +206,7 @@ export default function VaccinesManagement() {
       } else {
         const data = await healthService.createVaccine({
           ...formData,
-          rotation: parseInt(formData.rotation)
+          numberDoses: parseInt(formData.numberDoses)
         });
         if (data && data.success) {
           await fetchVaccines();
@@ -551,52 +593,63 @@ export default function VaccinesManagement() {
                     isDark ? 'bg-neutral-900/50 border-white/5 hover:border-green-500/20' : 'bg-white border-neutral-300 hover:border-green-500/30 shadow-sm'
                   }`}>
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                      {/* Name */}
+                      {/* Name & Species */}
                       <div className="md:col-span-3">
                         <span className={`text-[9px] font-mono font-bold uppercase tracking-[0.25em] block mb-2 ${
                           isDark ? 'text-neutral-500' : 'text-neutral-400'
                         }`}>
-                          Name
+                          Name / Species
                         </span>
                         <h3 className={`text-lg font-bold ${spaceGrotesk.className}`}>{vaccine.name}</h3>
-                      </div>
-
-                      {/* Rotation (Doses) */}
-                      <div className="md:col-span-2">
-                        <span className={`text-[9px] font-mono font-bold uppercase tracking-[0.25em] block mb-2 ${
-                          isDark ? 'text-neutral-500' : 'text-neutral-400'
-                        }`}>
-                          Rotation (Doses)
-                        </span>
-                        <p className={`${spaceGrotesk.className} text-2xl font-bold tracking-tight ${
-                          isDark ? 'text-green-400' : 'text-green-600'
-                        }`}>
-                          {vaccine.rotation}
+                        <p className="text-[10px] font-mono text-green-500 uppercase tracking-wider">
+                          {vaccine.applicableSpecies}
                         </p>
                       </div>
 
-                      {/* Interval */}
+                      {/* Disease / Purpose */}
                       <div className="md:col-span-2">
                         <span className={`text-[9px] font-mono font-bold uppercase tracking-[0.25em] block mb-2 ${
                           isDark ? 'text-neutral-500' : 'text-neutral-400'
                         }`}>
-                          Interval
+                          Disease / Purpose
                         </span>
                         <p className={`text-sm font-medium ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}>
-                          {vaccine.interval}
+                          {vaccine.diseasePurpose}
                         </p>
                       </div>
 
-                      {/* Description */}
+                      {/* Number Doses */}
+                      <div className="md:col-span-2">
+                        <span className={`text-[9px] font-mono font-bold uppercase tracking-[0.25em] block mb-2 ${
+                          isDark ? 'text-neutral-500' : 'text-neutral-400'
+                        }`}>
+                          Doses / Dosage
+                        </span>
+                        <p className={`text-sm font-bold ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                          {vaccine.numberDoses} x {vaccine.dosage}
+                        </p>
+                        <p className="text-[10px] font-mono text-neutral-500 italic">
+                          {vaccine.doseInterval}
+                        </p>
+                      </div>
+
+                      {/* Manufacturer */}
                       <div className="md:col-span-4">
                         <span className={`text-[9px] font-mono font-bold uppercase tracking-[0.25em] block mb-2 ${
                           isDark ? 'text-neutral-500' : 'text-neutral-400'
                         }`}>
-                          Description
+                          Manufacturer / Status
                         </span>
-                        <p className={`text-sm font-medium truncate ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                          {vaccine.description}
+                        <p className={`text-sm font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
+                          {vaccine.manufacturer || '-'}
                         </p>
+                        <span className={`inline-block mt-1 text-[9px] px-2 py-0.5 border font-bold uppercase tracking-widest ${
+                          vaccine.status === 'active' 
+                            ? 'text-green-400 border-green-500/20 bg-green-500/5' 
+                            : 'text-neutral-500 border-neutral-500/20 bg-neutral-500/5'
+                        }`}>
+                          {vaccine.status}
+                        </span>
                       </div>
 
                       {/* Actions */}
@@ -738,21 +791,19 @@ export default function VaccinesManagement() {
               />
             </div>
 
-            {/* Rotation (Doses) */}
+            {/* Disease / Purpose */}
             <div>
               <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
                 isDark ? 'text-neutral-500' : 'text-neutral-400'
               }`}>
-                Rotation (Number of Doses) *
+                Disease / Purpose *
               </label>
               <input
-                type="number"
+                type="text"
                 required
-                min="1"
-                max="10"
-                value={formData.rotation}
-                onChange={(e) => setFormData({...formData, rotation: e.target.value})}
-                placeholder="Enter number of doses"
+                value={formData.diseasePurpose}
+                onChange={(e) => setFormData({...formData, diseasePurpose: e.target.value})}
+                placeholder="Target disease or purpose"
                 className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
                   isDark 
                     ? 'bg-neutral-900 border-white/10 focus:border-green-500 placeholder:text-neutral-600' 
@@ -762,26 +813,160 @@ export default function VaccinesManagement() {
               />
             </div>
 
-            {/* Interval */}
+            {/* Applicable Species */}
             <div>
               <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
                 isDark ? 'text-neutral-500' : 'text-neutral-400'
               }`}>
-                Interval (e.g., "2 days", "1 week") *
+                Applicable Species *
               </label>
-              <input
-                type="text"
+              <select
                 required
-                value={formData.interval}
-                onChange={(e) => setFormData({...formData, interval: e.target.value})}
-                placeholder="Enter interval between doses"
-                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
-                  isDark 
-                    ? 'bg-neutral-900 border-white/10 focus:border-green-500 placeholder:text-neutral-600' 
-                    : 'bg-neutral-50 border-neutral-300 focus:border-green-500 placeholder:text-neutral-400'
-                }`}
+                value={formData.applicableSpecies}
+                onChange={(e) => setFormData({...formData, applicableSpecies: e.target.value})}
+                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium appearance-none ${
+                    isDark 
+                      ? 'bg-neutral-900 border-white/10 focus:border-green-500 text-white' 
+                      : 'bg-neutral-50 border-neutral-300 focus:border-green-500 text-neutral-900'
+                  }`}
                 disabled={submitting}
-              />
+              >
+                <option value="">Select Species</option>
+                {speciesList.map(s => (
+                  <option key={s.id} value={s.name}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Dosage & Number of Doses */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
+                  isDark ? 'text-neutral-500' : 'text-neutral-400'
+                }`}>
+                  Dosage *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.dosage}
+                  onChange={(e) => setFormData({...formData, dosage: e.target.value})}
+                  placeholder="e.g. 2ml"
+                  className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
+                    isDark 
+                      ? 'bg-neutral-900 border-white/10 focus:border-green-500 text-white' 
+                      : 'bg-neutral-50 border-neutral-300 focus:border-green-500 text-neutral-900'
+                  }`}
+                  disabled={submitting}
+                />
+              </div>
+              <div>
+                <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
+                  isDark ? 'text-neutral-500' : 'text-neutral-400'
+                }`}>
+                  No. of Doses *
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  value={formData.numberDoses}
+                  onChange={(e) => setFormData({...formData, numberDoses: e.target.value})}
+                  placeholder="Rotation"
+                  className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
+                    isDark 
+                      ? 'bg-neutral-900 border-white/10 focus:border-green-500 text-white' 
+                      : 'bg-neutral-50 border-neutral-300 focus:border-green-500 text-neutral-900'
+                  }`}
+                  disabled={submitting}
+                />
+              </div>
+            </div>
+
+            {/* Dose Interval & First Dose Age */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
+                  isDark ? 'text-neutral-500' : 'text-neutral-400'
+                }`}>
+                  Dose Interval *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.doseInterval}
+                  onChange={(e) => setFormData({...formData, doseInterval: e.target.value})}
+                  placeholder="e.g. 21 days"
+                  className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
+                    isDark 
+                      ? 'bg-neutral-900 border-white/10 focus:border-green-500 text-white' 
+                      : 'bg-neutral-50 border-neutral-300 focus:border-green-500 text-neutral-900'
+                  }`}
+                  disabled={submitting}
+                />
+              </div>
+              <div>
+                <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
+                  isDark ? 'text-neutral-500' : 'text-neutral-400'
+                }`}>
+                  First Dose Age
+                </label>
+                <input
+                  type="text"
+                  value={formData.firstDoseAge}
+                  onChange={(e) => setFormData({...formData, firstDoseAge: e.target.value})}
+                  placeholder="e.g. 3 months"
+                  className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
+                    isDark 
+                      ? 'bg-neutral-900 border-white/10 focus:border-green-500 text-white' 
+                      : 'bg-neutral-50 border-neutral-300 focus:border-green-500 text-neutral-900'
+                  }`}
+                  disabled={submitting}
+                />
+              </div>
+            </div>
+
+            {/* Manufacturer & Status */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
+                  isDark ? 'text-neutral-500' : 'text-neutral-400'
+                }`}>
+                  Manufacturer
+                </label>
+                <input
+                  type="text"
+                  value={formData.manufacturer}
+                  onChange={(e) => setFormData({...formData, manufacturer: e.target.value})}
+                  placeholder="Pharma name"
+                  className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
+                    isDark 
+                      ? 'bg-neutral-900 border-white/10 focus:border-green-500 text-white' 
+                      : 'bg-neutral-50 border-neutral-300 focus:border-green-500 text-neutral-900'
+                  }`}
+                  disabled={submitting}
+                />
+              </div>
+              <div>
+                <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
+                  isDark ? 'text-neutral-500' : 'text-neutral-400'
+                }`}>
+                  Status
+                </label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({...formData, status: e.target.value})}
+                  className={`w-full px-4 py-3.5 border outline-none transition-all font-medium appearance-none ${
+                    isDark 
+                      ? 'bg-neutral-900 border-white/10 focus:border-green-500 text-white' 
+                      : 'bg-neutral-50 border-neutral-300 focus:border-green-500 text-neutral-900'
+                  }`}
+                  disabled={submitting}
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
             </div>
 
             {/* Description */}
@@ -789,10 +974,9 @@ export default function VaccinesManagement() {
               <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
                 isDark ? 'text-neutral-500' : 'text-neutral-400'
               }`}>
-                Description *
+                Description
               </label>
               <textarea
-                required
                 rows={3}
                 value={formData.description}
                 onChange={(e) => setFormData({...formData, description: e.target.value})}

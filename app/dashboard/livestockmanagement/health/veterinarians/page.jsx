@@ -30,12 +30,21 @@ export default function VeterinariansManagement() {
   const [viewingVet, setViewingVet] = useState(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [specializations, setSpecializations] = useState(['general', 'surgery', 'reproduction', 'nutrition', 'emergency']);
+  const [specializations, setSpecializations] = useState([
+    'General Veterinary', 
+    'Surgery', 
+    'Reproduction', 
+    'Dairy Health', 
+    'Livestock Management', 
+    'Poultry Specialist', 
+    'Large Animal Specialist', 
+    'Small Animal Specialist'
+  ]);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
     address: '',
-    specialization: 'general'
+    specialization: 'General Veterinary'
   });
   const [phoneError, setPhoneError] = useState('');
   const [addressSuggestions, setAddressSuggestions] = useState([]);
@@ -120,7 +129,7 @@ export default function VeterinariansManagement() {
         name: vet.name || '',
         phone: vet.phone || '',
         address: vet.address || '',
-        specialization: vet.specialization || 'general'
+        specialization: vet.specialization || 'General Veterinary'
       });
     } else {
       setEditingVet(null);
@@ -128,7 +137,7 @@ export default function VeterinariansManagement() {
         name: '',
         phone: '',
         address: '',
-        specialization: 'general'
+        specialization: 'General Veterinary'
       });
     }
     setShowVetForm(true);
@@ -141,7 +150,7 @@ export default function VeterinariansManagement() {
       name: '',
       phone: '',
       address: '',
-      specialization: 'general'
+      specialization: 'General Veterinary'
     });
     setPhoneError('');
     setAddressSuggestions([]);
