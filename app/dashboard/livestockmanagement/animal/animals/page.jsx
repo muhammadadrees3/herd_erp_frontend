@@ -56,6 +56,8 @@ export default function AnimalsManagement() {
   const [breeds, setBreeds] = useState([]);
   const [species, setSpecies] = useState([]);
   const [sheds, setSheds] = useState([]);
+  const [formError, setFormError] = useState(null);
+  const [shedCapacityMap, setShedCapacityMap] = useState({}); // { shedId: { capacity, currentCount } }
 
   const pathname = usePathname();
   const router = useRouter();
@@ -210,6 +212,16 @@ export default function AnimalsManagement() {
     }
   };
 
+  // Build capacity map from animals list
+  useEffect(() => {
+    const map = {};
+    sheds.forEach(shed => {
+      const count = animals.filter(a => String(a.shedId) === String(shed.id)).length;
+      map[shed.id] = { capacity: shed.capacity, currentCount: count };
+    });
+    setShedCapacityMap(map);
+  }, [animals, sheds]);
+
   // Fetch Taxonomy from API
   const fetchTaxonomy = async () => {
     try {
@@ -297,6 +309,7 @@ export default function AnimalsManagement() {
     }
     setSubmitting(true);
     setError(null);
+    setFormError(null);
     const apiData = {
       dob: formData.dateOfBirth,
       animalType: formData.animalType,
@@ -313,7 +326,6 @@ export default function AnimalsManagement() {
 
     try {
       if (editingAnimal) {
-        // Update existing animal
         const data = await animalService.updateAnimal(editingAnimal.id, apiData);
         if (data && data.success) {
           await fetchAnimals();
@@ -322,9 +334,11 @@ export default function AnimalsManagement() {
           setSelectedSpecies('all');
           setSelectedHealth('all');
           setSelectedStatus('all');
+          handleCloseForm();
+        } else {
+          setFormError(data?.message || 'Update failed. Please try again.');
         }
       } else {
-        // Add new animal
         const data = await animalService.createAnimal(apiData);
         if (data && data.success) {
           await fetchAnimals();
@@ -333,42 +347,51 @@ export default function AnimalsManagement() {
           setSelectedSpecies('all');
           setSelectedHealth('all');
           setSelectedStatus('all');
+          handleCloseForm();
+        } else {
+          setFormError(data?.message || 'Failed to create animal. Please try again.');
         }
       }
-      handleCloseForm();
     } catch (error) {
-      console.error("❌ API Error, saving locally:", error);
-      const newAnimal = {
-        id: editingAnimal ? editingAnimal.id : (animals.length > 0 ? Math.max(...animals.map(a => a.id)) + 1 : 1),
-        animalTagId: editingAnimal ? editingAnimal.animalTagId : 'Pending...',
-        dateOfBirth: formData.dateOfBirth,
-        animalType: formData.animalType,
-        gender: formData.gender,
-        status: formData.status,
-        healthStatus: formData.healthStatus,
-        breedId: formData.breedId,
-        breed: formData.breed,
-        motherId: formData.motherId,
-        fatherId: formData.fatherId,
-        shedId: formData.shedId,
-        shedName: sheds.find(s => s.id.toString() === formData.shedId)?.shedName || formData.shedName,
-        registrationDate: formData.registrationDate
-      };
-
-      let updatedAnimals;
-      if (editingAnimal) {
-        updatedAnimals = animals.map(a => a.id === editingAnimal.id ? newAnimal : a);
+      console.error("❌ API Error:", error);
+      // Extract backend error message if available
+      const backendMsg = error?.response?.data?.message;
+      if (backendMsg) {
+        // Surface validation errors (capacity, duplicates) in the form
+        setFormError(backendMsg);
       } else {
-        updatedAnimals = [newAnimal, ...animals];
+        // Only fall back to localStorage for true network/server errors
+        const newAnimal = {
+          id: editingAnimal ? editingAnimal.id : (animals.length > 0 ? Math.max(...animals.map(a => a.id)) + 1 : 1),
+          animalTagId: editingAnimal ? editingAnimal.animalTagId : 'Pending...',
+          dateOfBirth: formData.dateOfBirth,
+          animalType: formData.animalType,
+          gender: formData.gender,
+          status: formData.status,
+          healthStatus: formData.healthStatus,
+          breedId: formData.breedId,
+          breed: formData.breed,
+          motherId: formData.motherId,
+          fatherId: formData.fatherId,
+          shedId: formData.shedId,
+          shedName: sheds.find(s => s.id.toString() === formData.shedId)?.shedName || formData.shedName,
+          registrationDate: formData.registrationDate
+        };
+        let updatedAnimals;
+        if (editingAnimal) {
+          updatedAnimals = animals.map(a => a.id === editingAnimal.id ? newAnimal : a);
+        } else {
+          updatedAnimals = [newAnimal, ...animals];
+        }
+        setAnimals(updatedAnimals);
+        localStorage.setItem('livestockAnimals', JSON.stringify(updatedAnimals));
+        setSearchTerm('');
+        setSelectedType('all');
+        setSelectedSpecies('all');
+        setSelectedHealth('all');
+        setSelectedStatus('all');
+        handleCloseForm();
       }
-      setAnimals(updatedAnimals);
-      localStorage.setItem('livestockAnimals', JSON.stringify(updatedAnimals));
-      setSearchTerm('');
-      setSelectedType('all');
-      setSelectedSpecies('all');
-      setSelectedHealth('all');
-      setSelectedStatus('all');
-      handleCloseForm();
     } finally {
       setSubmitting(false);
     }
@@ -1035,7 +1058,7 @@ export default function AnimalsManagement() {
         <select
           required
           value={formData.shedId}
-          onChange={(e) => setFormData({ ...formData, shedId: e.target.value })}
+          onChange={(e) => setFormError(null) || setFormData({ ...formData, shedId: e.target.value })}
           className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${isDark
               ? 'bg-neutral-900 border-white/10 focus:border-green-500'
               : 'bg-neutral-50 border-neutral-300 focus:border-green-500'
@@ -1043,12 +1066,34 @@ export default function AnimalsManagement() {
           disabled={submitting}
         >
           <option value="">Select a Shed</option>
-          {sheds.map(shed => (
-            <option key={shed.id} value={shed.id}>
-              {shed.shedName || shed.name}
-            </option>
-          ))}
+          {sheds.map(shed => {
+            const info = shedCapacityMap[shed.id];
+            const available = info ? info.capacity - info.currentCount : null;
+            const isFull = available !== null && available <= 0;
+            return (
+              <option key={shed.id} value={shed.id} disabled={isFull}>
+                {shed.shedName || shed.name}{info ? ` (${info.currentCount}/${info.capacity}${isFull ? ' - FULL' : ''})` : ''}
+              </option>
+            );
+          })}
         </select>
+        {/* Capacity indicator */}
+        {formData.shedId && shedCapacityMap[formData.shedId] && (() => {
+          const info = shedCapacityMap[formData.shedId];
+          const available = info.capacity - info.currentCount;
+          const isFull = available <= 0;
+          return (
+            <div className={`mt-2 flex items-center gap-2 text-xs font-mono font-bold ${
+              isFull ? 'text-red-500' : available <= 2 ? 'text-amber-500' : 'text-green-600'
+            }`}>
+              <span className={`inline-block w-2 h-2 rounded-full ${isFull ? 'bg-red-500' : available <= 2 ? 'bg-amber-500' : 'bg-green-500'}`} />
+              {isFull
+                ? `SHED FULL — No available slots`
+                : `${available} slot${available === 1 ? '' : 's'} available of ${info.capacity} capacity`
+              }
+            </div>
+          );
+        })()}
       </div>
 
 
@@ -1255,6 +1300,14 @@ export default function AnimalsManagement() {
           <option value="Sick">Sick</option>
         </select>
       </div>
+
+      {/* Error alert */}
+      {formError && (
+        <div className={`flex items-start gap-3 p-4 border ${isDark ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-red-50 border-red-200 text-red-700'}`}>
+          <span className="text-lg leading-none">⚠</span>
+          <p className="text-xs font-medium leading-relaxed">{formError}</p>
+        </div>
+      )}
 
       {/* Buttons */}
       <div className="flex gap-3 pt-6">

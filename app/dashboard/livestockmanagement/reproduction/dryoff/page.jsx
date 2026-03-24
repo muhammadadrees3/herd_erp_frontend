@@ -41,8 +41,8 @@ export default function DryOffManagement() {
   // Form data according to API structure
   const [formData, setFormData] = useState({
     animalId: '',
-    animalName: '',
     breed: '',
+    species: '',
     expectedCalvingDate: '',
     dryOffDate: '',
     actualDryOffDate: '',
@@ -50,6 +50,7 @@ export default function DryOffManagement() {
     lactationEndDate: '',
     confirmed: false
   });
+  const [animals, setAnimals] = useState([]);
 
   // Fetch Data from Backend
   const fetchRecords = async () => {
@@ -100,6 +101,7 @@ export default function DryOffManagement() {
   // Initial data fetch
   useEffect(() => {
     fetchRecords();
+    fetchAnimals();
   }, []);
 
   // Save to localStorage whenever dryOffRecords change (backup)
@@ -108,6 +110,38 @@ export default function DryOffManagement() {
       localStorage.setItem('dryOffRecords', JSON.stringify(dryOffRecords));
     }
   }, [dryOffRecords]);
+
+  // Fetch animals for the dropdown
+  const fetchAnimals = async () => {
+    try {
+      const res = await axiosInstance.get('/animals');
+      if (res.data && res.data.success) {
+        setAnimals(res.data.data || []);
+      } else if (Array.isArray(res.data)) {
+        setAnimals(res.data);
+      }
+    } catch (err) {
+      console.error('Error fetching animals for dryoff:', err);
+    }
+  };
+
+  // When an animal is selected from the dropdown, auto-populate breed and species
+  const handleAnimalSelect = (animalId) => {
+    const selected = animals.find(a =>
+      String(a.id) === String(animalId) ||
+      String(a.animalTagId) === String(animalId)
+    );
+    if (selected) {
+      setFormData(prev => ({
+        ...prev,
+        animalId: selected.animalTagId || selected.id,
+        breed: selected.breed || selected.Breed?.name || '',
+        species: selected.animalType || selected.Species?.name || ''
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, animalId, breed: '', species: '' }));
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -119,18 +153,17 @@ export default function DryOffManagement() {
 
   // Submit Data (Create or Update)
   const handleSubmit = async () => {
-    if (!formData.animalId || !formData.animalName || !formData.expectedCalvingDate || !formData.dryOffDate) {
-      return; // No alert
+    if (!formData.animalId || !formData.expectedCalvingDate || !formData.dryOffDate) {
+      return;
     }
     
     setSubmitting(true);
     
     try {
-      // Prepare API data with correct field names
       const apiData = {
         animalId: formData.animalId,
-        animalName: formData.animalName,
         breed: formData.breed,
+        species: formData.species,
         expectedCalvingDate: formData.expectedCalvingDate,
         dryOffDate: formData.dryOffDate,
         actualDryOffDate: formData.actualDryOffDate || null,
@@ -154,11 +187,10 @@ export default function DryOffManagement() {
       setShowModal(false);
       setEditingRecord(null);
       setCurrentPage(1);
-      // Reset form data
       setFormData({
         animalId: '',
-        animalName: '',
         breed: '',
+        species: '',
         expectedCalvingDate: '',
         dryOffDate: '',
         actualDryOffDate: '',
@@ -167,39 +199,14 @@ export default function DryOffManagement() {
         confirmed: false
       });
     } catch (error) {
-      console.error("API Error, saving locally:", error);
-      console.log("Error details:", error.response?.data);
-      
-      // Fallback to localStorage if API fails
-      const newRecord = {
-        ...formData,
-        // Map for display
-        plannedDryOffDate: formData.dryOffDate,
-        expectedCalving: formData.expectedCalvingDate,
-        lactationEnd: formData.lactationEndDate,
-        id: editingRecord ? (editingRecord.id || editingRecord._id) : Date.now(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      
-      let updatedRecords;
-      if (editingRecord) {
-        updatedRecords = dryOffRecords.map(record => 
-          (record.id || record._id) === (editingRecord.id || editingRecord._id) ? newRecord : record
-        );
-      } else {
-        updatedRecords = [...dryOffRecords, newRecord];
-      }
-      
-      setDryOffRecords(updatedRecords);
-      localStorage.setItem('dryOffRecords', JSON.stringify(updatedRecords));
+      console.error("API Error:", error);
       setShowModal(false);
       setEditingRecord(null);
       setCurrentPage(1);
       setFormData({
         animalId: '',
-        animalName: '',
         breed: '',
+        species: '',
         expectedCalvingDate: '',
         dryOffDate: '',
         actualDryOffDate: '',
@@ -245,12 +252,10 @@ export default function DryOffManagement() {
 
   const handleEdit = (record) => {
     setEditingRecord(record);
-    
-    // Map API fields to UI form fields
     setFormData({
       animalId: record.animalId || '',
-      animalName: record.animalName || '',
       breed: record.breed || '',
+      species: record.species || '',
       expectedCalvingDate: record.expectedCalvingDate || record.expectedCalving || '',
       dryOffDate: record.dryOffDate || record.plannedDryOffDate || '',
       actualDryOffDate: record.actualDryOffDate || '',
@@ -265,8 +270,8 @@ export default function DryOffManagement() {
     setEditingRecord(null);
     setFormData({
       animalId: '',
-      animalName: '',
       breed: '',
+      species: '',
       expectedCalvingDate: '',
       dryOffDate: '',
       actualDryOffDate: '',
@@ -328,10 +333,8 @@ export default function DryOffManagement() {
 
   const filteredRecords = dryOffRecords.filter(record => {
     const displayRecord = getDisplayRecord(record);
-    const animalName = displayRecord.animalName || '';
     const animalId = displayRecord.animalId || '';
-    const matchesSearch = animalName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         animalId.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = animalId.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
   });
 
@@ -663,13 +666,15 @@ export default function DryOffManagement() {
                     >
                       {/* Animal */}
                       <div>
-                        <div className={`font-bold ${spaceGrotesk.className}`}>{displayRecord.animalName}</div>
-                        <div className={`text-xs font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                          ID: {displayRecord.animalId}
-                        </div>
+                        <div className={`font-bold ${spaceGrotesk.className} font-mono text-sm`}>{displayRecord.animalId}</div>
                         {displayRecord.breed && (
-                          <div className={`text-xs font-medium ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>
+                          <div className={`text-xs font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
                             {displayRecord.breed}
+                          </div>
+                        )}
+                        {displayRecord.species && (
+                          <div className={`text-xs font-medium ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>
+                            {displayRecord.species}
                           </div>
                         )}
                       </div>
@@ -915,71 +920,71 @@ export default function DryOffManagement() {
 
             {/* Modal Body */}
             <div className="p-6 space-y-4">
+              {/* Animal ID Dropdown */}
+              <div>
+                <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
+                  isDark ? 'text-neutral-500' : 'text-neutral-400'
+                }`}>
+                  Animal ID *
+                </label>
+                <select
+                  value={formData.animalId}
+                  onChange={(e) => handleAnimalSelect(e.target.value)}
+                  className={`w-full px-4 py-3.5 border outline-none transition-all font-medium font-mono ${
+                    isDark 
+                      ? 'bg-neutral-900 border-white/10 focus:border-cyan-500' 
+                      : 'bg-neutral-50 border-neutral-300 focus:border-cyan-500'
+                  }`}
+                  required
+                  disabled={submitting}
+                >
+                  <option value="">Select an Animal</option>
+                  {animals.map(a => (
+                    <option key={a.id} value={a.animalTagId || a.id}>
+                      {a.animalTagId || `Animal #${a.id}`}{a.breed ? ` — ${a.breed}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Auto-populated fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
                     isDark ? 'text-neutral-500' : 'text-neutral-400'
                   }`}>
-                    Animal ID *
+                    Breed
                   </label>
                   <input
                     type="text"
-                    name="animalId"
-                    value={formData.animalId}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
+                    value={formData.breed}
+                    readOnly
+                    className={`w-full px-4 py-3.5 border outline-none font-medium cursor-not-allowed opacity-70 ${
                       isDark 
-                        ? 'bg-neutral-900 border-white/10 focus:border-cyan-500 placeholder:text-neutral-600' 
-                        : 'bg-neutral-50 border-neutral-300 focus:border-cyan-500 placeholder:text-neutral-400'
+                        ? 'bg-neutral-800 border-white/10 text-neutral-300' 
+                        : 'bg-neutral-100 border-neutral-200 text-neutral-600'
                     }`}
-                    placeholder="e.g., COW-101"
-                    required
-                    disabled={submitting}
+                    placeholder="Auto-populated from animal"
                   />
                 </div>
-
                 <div>
                   <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
                     isDark ? 'text-neutral-500' : 'text-neutral-400'
                   }`}>
-                    Animal Name *
+                    Species
                   </label>
                   <input
                     type="text"
-                    name="animalName"
-                    value={formData.animalName}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
+                    value={formData.species}
+                    readOnly
+                    className={`w-full px-4 py-3.5 border outline-none font-medium cursor-not-allowed opacity-70 ${
                       isDark 
-                        ? 'bg-neutral-900 border-white/10 focus:border-cyan-500 placeholder:text-neutral-600' 
-                        : 'bg-neutral-50 border-neutral-300 focus:border-cyan-500 placeholder:text-neutral-400'
+                        ? 'bg-neutral-800 border-white/10 text-neutral-300' 
+                        : 'bg-neutral-100 border-neutral-200 text-neutral-600'
                     }`}
-                    placeholder="e.g., Rani"
-                    required
-                    disabled={submitting}
+                    placeholder="Auto-populated from animal"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
-                  isDark ? 'text-neutral-500' : 'text-neutral-400'
-                }`}>
-                  Breed
-                </label>
-                <input
-                  type="text"
-                  name="breed"
-                  value={formData.breed}
-                  onChange={handleInputChange}
-                  className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
-                    isDark 
-                      ? 'bg-neutral-900 border-white/10 focus:border-cyan-500 placeholder:text-neutral-600' 
-                      : 'bg-neutral-50 border-neutral-300 focus:border-cyan-500 placeholder:text-neutral-400'
-                  }`}
-                  placeholder="e.g., Holstein"
-                  disabled={submitting}
-                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
