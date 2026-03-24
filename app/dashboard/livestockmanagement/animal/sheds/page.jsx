@@ -479,7 +479,7 @@ export default function ShedsManagement() {
                         <button
                           className={`cursor-pointer p-2.5 border transition-all ${isDark ? 'hover:bg-green-500/10 text-green-400 border-white/10 hover:border-green-500/20' : 'hover:bg-green-50 text-green-600 border-neutral-200 hover:border-green-300'}`}
                           title="Add Animal"
-                          onClick={() => router.push(`/livestockmanagement/animal/animals?addAnimal=true&shedId=${shed.id}&shedName=${encodeURIComponent(shed.shedName || shed.name)}`)}
+                          onClick={() => router.push(`/dashboard/livestockmanagement/animal/animals?addAnimal=true&shedId=${shed.id}&shedName=${encodeURIComponent(shed.shedName || shed.name)}`)}
                         >
                           <Plus className="w-4 h-4" />
                         </button>

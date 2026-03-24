@@ -1154,7 +1154,7 @@ export default function AnimalsManagement() {
       </div>
 
       {/* Mother (Optional) */}
-      <div>
+      {/* <div>
         <label className={`block text-[11px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${isDark ? 'text-neutral-400' : 'text-neutral-500'
           }`}>
           Mother (Optional)
@@ -1173,10 +1173,10 @@ export default function AnimalsManagement() {
             <option key={a.id} value={a.id}>{a.animalTagId || a.id}</option>
           ))}
         </select>
-      </div>
+      </div> */}
 
       {/* Father (Optional) */}
-      <div>
+      {/* <div>
         <label className={`block text-[11px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${isDark ? 'text-neutral-400' : 'text-neutral-500'
           }`}>
           Father (Optional)
@@ -1195,7 +1195,7 @@ export default function AnimalsManagement() {
             <option key={a.id} value={a.id}>{a.animalTagId || a.id}</option>
           ))}
         </select>
-      </div>
+      </div> */}
 
       {/* Registration Date */}
       <div>
