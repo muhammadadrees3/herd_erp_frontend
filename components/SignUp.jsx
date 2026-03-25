@@ -59,30 +59,6 @@ const systemFeatures = [
 ];
 
 
-// ─── Reusable field ──────────────────────────────────────────────────────
-const Field = ({ label, LabelIcon, name, type = "text", placeholder, value, onChange, required = true, isDark }) => {
-  const inputBg = isDark ? "rgba(11,18,11,0.8)" : "rgba(240,236,228,0.9)";
-  const inputBorder = isDark ? "rgba(196,154,42,0.2)" : "rgba(46,107,46,0.25)";
-  const textMain = isDark ? B.cream : "#1A2A1A";
-
-  return (
-    <div>
-      <label className="flex items-center gap-1.5 mb-2 text-[9px] uppercase tracking-widest"
-        style={{ color: B.muted, fontFamily: mono }}>
-        <LabelIcon className="w-3 h-3" />{label}
-      </label>
-      <input
-        type={type} name={name} value={value} placeholder={placeholder}
-        onChange={onChange} required={required}
-        className="w-full px-4 py-3.5 text-[12px] outline-none transition-all duration-200"
-        style={{ background: inputBg, border: `1px solid ${inputBorder}`, color: textMain, fontFamily: mono, caretColor: B.wheatGold }}
-        onFocus={e => (e.currentTarget.style.borderColor = B.forestGreen)}
-        onBlur={e => (e.currentTarget.style.borderColor = inputBorder)}
-      />
-    </div>
-  );
-};
-
 export default function SignUp() {
   const { isDark } = useTheme();
   const [formData, setFormData] = useState({
@@ -136,6 +112,25 @@ export default function SignUp() {
   const textSub = isDark ? B.offWhite : "#4A5A48";
   const inputBg = isDark ? "rgba(11,18,11,0.8)" : "rgba(240,236,228,0.9)";
   const inputBorder = isDark ? "rgba(196,154,42,0.2)" : "rgba(46,107,46,0.25)";
+
+  // ─── Reusable field ──────────────────────────────────────────────────────
+  const Field = ({ label, LabelIcon, name, type = "text", placeholder, value, required = true }) => (
+    <div>
+      <label className="flex items-center gap-1.5 mb-2 text-[9px] uppercase tracking-widest"
+        style={{ color: B.muted, fontFamily: mono }}>
+        <LabelIcon className="w-3 h-3" />{label}
+      </label>
+      <input
+        type={type} name={name} value={value} placeholder={placeholder}
+        onChange={handleChange} required={required}
+        className="w-full px-4 py-3.5 text-[12px] outline-none transition-all duration-200"
+        style={{ background: inputBg, border: `1px solid ${inputBorder}`, color: textMain, fontFamily: mono, caretColor: B.wheatGold }}
+        onFocus={e => (e.currentTarget.style.borderColor = B.forestGreen)}
+        onBlur={e => (e.currentTarget.style.borderColor = inputBorder)}
+      />
+    </div>
+  );
+
 
   return (
     <div className="min-h-screen relative overflow-hidden pt-[76px]"
@@ -217,9 +212,10 @@ export default function SignUp() {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                <Field label="Full Name" LabelIcon={User} name="fullName" placeholder="John Smith" value={formData.fullName} onChange={handleChange} isDark={isDark} />
-                <Field label="Farm Name" LabelIcon={Building2} name="farmName" placeholder="Green Valley Ranch" value={formData.farmName} onChange={handleChange} isDark={isDark} />
-                <Field label="Email" LabelIcon={Mail} name="email" placeholder="your@email.com" value={formData.email} type="email" onChange={handleChange} isDark={isDark} />
+                <Field label="Full Name" LabelIcon={User} name="fullName" placeholder="John Smith" value={formData.fullName} />
+                <Field label="Farm Name" LabelIcon={Building2} name="farmName" placeholder="Green Valley Ranch" value={formData.farmName} />
+                <Field label="Email" LabelIcon={Mail} name="email" placeholder="your@email.com" value={formData.email} type="email" />
+
 
                 {/* Password with show/hide */}
                 <div>

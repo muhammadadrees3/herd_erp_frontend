@@ -111,12 +111,12 @@ const milkService = {
     return response.data;
   },
 
-  getCustomers: async () => {
+  getSalesOverviewCustomers: async () => {
     const response = await axiosInstance.get('/sales/overview/customers');
     return response.data;
   },
 
-  getPaymentStats: async () => {
+  getSalesOverviewPayments: async () => {
     const response = await axiosInstance.get('/sales/overview/payments');
     return response.data;
   },

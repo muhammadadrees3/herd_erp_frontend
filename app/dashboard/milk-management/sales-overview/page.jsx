@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/dashboard/Navbar';
 import milkService from '@/services/milkService';
 import Cookies from 'js-cookie';
+import { useTheme } from '@/context/ThemeContext';
 import { 
   DollarSign, Droplet, AlertCircle, TrendingUp, Calendar,
   ChevronDown, Download, FileText
@@ -21,7 +22,8 @@ const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"] }
 const serif = "var(--font-display)";
 
 export default function SalesOverview() {
-  const [isDark, setIsDark] = useState(false); 
+  const { isDark } = useTheme(); 
+
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -222,8 +224,6 @@ export default function SalesOverview() {
 
       {/* NAVBAR WITH SIDEBAR */}
       <Navbar 
-        isDark={isDark} 
-        setIsDark={setIsDark} 
         sidebarOpen={sidebarOpen} 
         setSidebarOpen={setSidebarOpen}
         searchPlaceholder="Search sales..."
