@@ -1,0 +1,653 @@
+================================================================================
+       HERD ERP — COMPLETE FRONTEND UI/UX DESIGN DOCUMENTATION
+                  (Landing Page + Auth + Dashboard)
+================================================================================
+File: UI_UX_DESIGN_DOCUMENTATION.txt
+Project: HerdERP - Livestock Management Platform
+Frontend Framework: Next.js (App Router)
+Styling: Tailwind CSS
+Animation Library: Framer Motion
+Icons: Lucide React
+================================================================================
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 1 — GLOBAL DESIGN SYSTEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1.1 THEME SYSTEM
+----------------
+The app has a full DARK / LIGHT theme toggle, managed globally via ThemeContext.
+Every component reads `isDark` and switches all colors accordingly.
+
+  Dark Mode Background:   bg-neutral-950 / bg-neutral-900 (near-black)
+  Light Mode Background:  bg-white / bg-neutral-50 / bg-neutral-100
+  Root page uses a gradient:
+    Dark:  bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950
+    Light: bg-gradient-to-br from-gray-50 via-white to-gray-50
+
+1.2 TYPOGRAPHY
+--------------
+Two Google Fonts are used throughout every component:
+
+  PRIMARY HEADING FONT:  Space Grotesk
+    Weights used: 300, 500, 700
+    Used for: All major headings (h1, h2, h3), hero titles, card titles
+    Style: UPPERCASE, tight tracking (tracking-tighter), bold, condensed leading
+
+  BODY / UI FONT:  Inter
+    Weights used: 300, 400, 600
+    Used for: Navigation labels, paragraphs, descriptions, form labels
+
+  MONOSPACE (accent):  Geist Mono (from Geist via Next.js) + Inter mono classes
+    Used for: Technical labels, IDs, code-style hints, stat sub-labels
+    Example: "FARM-A102", "LOG-001", "PRICE // MONTHLY", "// LIVESTOCK_PLATFORM"
+
+  Typography sizes for headings:
+    Hero H1:      text-5xl → text-7xl → text-8xl → text-9xl (very large)
+    Section H2:   text-4xl → text-6xl → text-8xl
+    Card H3:      text-xl → text-2xl → text-3xl
+    Labels:       text-[9px] → text-[11px] (very small uppercase mono)
+
+1.3 COLOR PALETTE
+-----------------
+  PRIMARY ACCENT:    Green (green-400, green-500, green-600, green-700)
+                     Used for: CTAs, active states, icons, borders, gradients
+  TEXT PRIMARY:      White (dark) / Black (light)
+  TEXT SECONDARY:    neutral-400 (dark) / neutral-600 (light)
+  TEXT MUTED:        neutral-500 / neutral-600
+  BORDERS DARK:      white/5  white/10  white/20  green-500/20  green-500/30
+  BORDERS LIGHT:     neutral-200  neutral-300  green-200  green-500/30
+  ERROR:             Red-500 (used in bg-red-500/10 with border-red-500/30)
+  SUCCESS:           Green-500 (bg-green-500/10 with border-green-500/30)
+
+1.4 OVERALL DESIGN AESTHETIC
+-----------------------------
+The design follows a "Technical Brutalist" or "Industrial Dashboard" aesthetic:
+  - Sharp rectangular cards (no round corners except a few selective ones)
+  - Thin technical border lines, including corner accent markers (2px corner borders)
+  - Grid background overlays (subtle linear gradients forming grid patterns)
+  - Technical monospace labels like "LOG-001", "FARM-A102", "// REAL-TIME"
+  - Glowing green accents (green soft glow shadows: shadow-[0_0_30px_rgba(34,197,94,0.3)])
+  - Everything in UPPERCASE for labels and buttons
+  - Scan-line animations (a green line sweeping downward like a radar/scan effect)
+
+1.5 BACKGROUND DECORATION (used on most pages)
+-----------------------------------------------
+  Most sections use these layered background elements:
+  1. A subtle grid: bg-[linear-gradient(to_right,#80808012_1px...)] bg-[size:24px_24px]
+  2. A large radial soft glow blob (500px, blur-[120px]) in green-900/10 or green-500/5
+  - These are `pointer-events-none` overlays, purely decorative
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 2 — LANDING PAGE (app/page.tsx)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The landing page renders these components top to bottom:
+  [Header] → [HeroSection] → [HeroScroll] → [FeatureCards]
+  → [TrustBuilding] → [Testimonials] → [PricingCards] → [Footer]
+
+All sections use anchor IDs (#hero, #feature-cards, #agri-trust, #pricing, #footer)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 3 — HEADER (components/Header.jsx)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+LAYOUT:
+  - Fixed to top (fixed top-0), full width, z-index 100
+  - Height: h-24 when transparent at top, shrinks to h-20 after scroll
+  - Three columns: Logo (left), Nav links (center), Actions (right)
+
+BEHAVIOR (scroll-aware):
+  - On the homepage when not scrolled:
+      Transparent background (bg-transparent)
+      All text is WHITE (for contrast vs the dark hero video behind)
+  - After scrolling 20px:
+      Dark mode: bg-neutral-950/90 + backdrop-blur-xl + border-b border-white/5
+      Light mode: bg-white/90 + backdrop-blur-xl + border-b border-neutral-200
+  - Entry animation: Framer Motion slides header in from top (initial y:-100)
+
+LOGO:
+  - Image: /erp-logo.png, width 240 height 120, displayed at h-16 md:h-25
+  - Clicking logo smoothly scrolls to #hero section
+
+DESKTOP NAVIGATION:
+  - Font: Inter, size text-[11px], UPPERCASE, tracking-[0.2em], font-semibold
+  - Links: Home, Features, Pricing, About, Contact
+  - All are scroll-to-section buttons (not page routes)
+  - Hover effect: an animated underline (w-0 → w-full, green-500, 1.5px height)
+  - Text color changes by state:
+      Transparent header: text-white → hover:text-green-400
+      Dark scrolled:      text-neutral-400 → hover:text-green-400
+      Light scrolled:     text-neutral-600 → hover:text-green-600
+
+RIGHT ACTIONS:
+  - Dark/Light toggle button (Sun / Moon icon from Lucide)
+  - "Get Started" CTA button:
+      Bordered button (not filled)
+      transparent header: border-white/30 text-white → hover: bg-white text-black
+      dark scrolled:      border-white/10 text-white → hover: bg-white text-black
+      light scrolled:     border-neutral-300 text-black → hover: bg-black text-white
+      Contains ChevronRight icon
+  - Mobile hamburger menu button (hidden on lg+)
+
+MOBILE MENU (full-screen overlay):
+  - Covers entire viewport, spring animation sliding from right (x: 100% → 0)
+  - Background: bg-neutral-950 (dark) / bg-white (light)
+  - Nav items shown as giant text: text-5xl Space Grotesk bold, staggered fade-in
+  - Hover: text-green-400
+  - "Get Started" button at bottom of mobile menu
+  - X button top-right to close
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 4 — HERO SECTION (components/HeroSection.jsx)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+LAYOUT: Full min-h-screen, centered content, overflow hidden
+
+BACKGROUND:
+  - A fullscreen AUTOPLAY VIDEO (/Videos/Herd Video.mp4), muted, looped
+  - Dark mode: opacity-60 (slightly transparent to show dark bg)
+  - Light mode: opacity-100 brightness-75 contrast-125 saturate-110
+  - Gradient overlay on top:
+      Dark:  from-neutral-950/80 via-neutral-900/40 to-neutral-950
+      Light: from-neutral-900/40 via-neutral-900/20 to-neutral-900/30
+  - The video parallax-scrolls downward using Framer Motion (y: 0 → 300 on scroll)
+
+HERO TEXT (parallax — fades and moves up as user scrolls):
+  - H1: "Precision" on first line + "Livestock" on second line
+  - "Livestock" is a gradient text: from-green-400 to-emerald-600 (text-transparent bg-clip-text)
+  - Size: text-5xl → text-9xl
+  - Font: Space Grotesk, bold, uppercase, tracking-tighter, leading-[0.9]
+  - Sub-paragraph: font-light, text-lg/text-xl, text-neutral-300 (dark) / text-white/90 (light)
+
+CTA BUTTONS:
+  - "START FREE 30-DAY TRIAL": bg-green-600, white text, ArrowRight icon
+    Letter spacing: tracking-widest, text-sm bold uppercase
+  - "VIEW DEMO": bordered, backdrop-blur-md
+    Dark: border-neutral-700 text-neutral-300 hover:border-green-500/50
+    Light: border-white/40 text-white bg-white/10 hover:bg-white/20
+
+SCROLLING IMAGE TICKER (bottom of hero):
+  - A horizontal strip with backdrop-blur-md and border-y
+  - 5 image cards auto-scroll infinitely left (40s duration, linear, Framer Motion)
+  - Each card: w-[300px], rounded-lg, h-[180px]
+  - Images are grayscale by default → grayscale-0 on hover (color reveals on hover)
+  - Each card has a gradient overlay (from-black/80 to-transparent)
+  - Bottom-left label: green-400 monospace tag + white Space Grotesk title
+  - Cards: "Herd Monitoring / LIVE DATA", "Milk Production / YIELD STATS",
+           "Health Records / VETERINARY", "Breeding Cycles / REPRODUCTION",
+           "Feed Management / NUTRITION"
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 5 — HERO SCROLL / DASHBOARD PREVIEW (components/HeroScroll.jsx)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+LAYOUT: py-32 vertical padding, max-w-7xl centered
+
+BACKGROUND:
+  - Dot grid pattern (radial-gradient dots) in light mode
+  - Line grid (linear-gradient) in dark mode
+  - A centered radial green glow (rgba(34,197,94,0.04)→0.05)
+
+SECTION HEADING:
+  - H2: "Dashboard" + line break + "For Your Herd"
+  - "For Your Herd" = gradient from green-400 → green-600 → emerald-900
+  - Size: text-6xl → text-9xl, Space Grotesk, uppercase, tracking-tighter, leading-[0.8]
+  - Two decorative 1px green lines flank the description paragraph on desktop
+
+CTA BUTTONS BELOW HEADING:
+  - "Explore Dashboard": solid green-600, shimmer animation on hover
+    (a white gradient skew element slides across the button from left to right)
+  - "View Features": bordered, backdrop-blur-sm
+
+3D TILTING DASHBOARD IMAGE FRAME:
+  - On mouse move, the frame rotates slightly on X and Y axes (perspective: 2000px)
+  - Uses Framer Motion springs for smooth tilting effect (rotateX, rotateY ±5°)
+  - On hover: green glow shadow appears (shadow-[0_30px_100px_rgba(34,197,94,0.3)])
+
+  Browser Chrome Bar (top of frame):
+    - Red / Yellow / Green traffic-light dots (macOS style)
+    - Mock URL bar showing "https://dashboard.agriherd.io"
+    - A small "Live" badge (green, monospace, uppercase)
+    - Monitor icon
+
+  Dashboard Image Area:
+    - Displays /overview.png (screenshot of the dashboard)
+    - On hover: slightly scales up (scale-[1.02])
+    - Hover overlay: semi-transparent black with a play button (green circle + white play icon)
+    - Animated scan line: a green 2px line sweeps from top to bottom (4s loop)
+    - Bottom-right: a coordinate badge "40.7128° N, 74.0060° W" with Crosshair icon
+
+  Corner Decorative Blobs:
+    - Bottom-left: w-24 h-24 blur-3xl bg-green-500/20 circle
+    - Top-right: w-24 h-24 blur-3xl bg-blue-500/20 circle
+
+VIDEO MODAL (when play button clicked):
+  - Full-screen black overlay (bg-black/90 backdrop-blur-sm)
+  - Spring-animated modal containing a <video> element playing /Videos/herd-dashboard.mp4
+  - X button top-right with rotate-on-hover animation
+  - "Press ESC to close" hint at bottom
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 6 — FEATURE CARDS (components/cards/FeatureCards.jsx)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+LAYOUT: min-h-screen, centered carousel stage
+
+SECTION HEADER:
+  - Small badge: border + bg-green-500/5, Activity icon, monospace green text
+    "Complete Herd Management Platform"
+  - H2: "PRECISION HERD MANAGEMENT TOOLS" | "HERD MANAGEMENT TOOLS" in green-500
+  - Subtext styled as code comment: "// Modern livestock management..."
+
+FEATURES CAROUSEL (3D perspective carousel):
+  - 6 feature cards auto-rotate every 5 seconds
+  - Center card: full opacity, scale 1.0, no blur
+  - Left/Right side cards: opacity-30, scale-0.85, blur-[1px], translated ±60%
+  - Hidden cards: opacity-0, scale-0.5
+
+  CARD DESIGN (each card):
+    - Sharp rectangular, backdrop-blur-xl
+    - 4 corner accent marks (2px green border in each corner)
+    - Dark: bg-neutral-900/80 border-white/10
+    - Light: bg-white/80 border-neutral-200
+    - Active (center) highlight: shadow-[0_0_60px_-15px_rgba(34,197,94,0.3)] + border-green-500/30
+
+    Card internals:
+      - Top: Icon in a bordered square (green-400, hover:green-300)
+      - Title in Space Grotesk, uppercase, text-2xl, bold
+      - Description in monospace, text-xs
+      - Benefits list: each item has a 1px green dot + uppercase text-[11px]
+      - "See In Action" button: full width, bordered green, fills green on hover
+
+  NAVIGATION CONTROLS:
+    - Left/Right chevron buttons (circular, bordered)
+    - hover: bg-green-500 text-black
+    - Pagination dots below: active dot = w-8 bg-green-500, inactive = w-2 bg-neutral-800
+
+  Features shown:
+    Inventory Control, Financial Analysis, Animal Health Management,
+    Production Analysis, Smart Alerts & Reminders, Worker Management
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 7 — TRUST BUILDING (components/TrustBuilding.jsx)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+LAYOUT: Two-column (3/5 left + 2/5 right), min-h-[80vh]
+
+LEFT SIDE (Data Hub):
+  - H2: "Helping Farmers" + line break + "Make Better Decisions"
+    "Make Better Decisions" = gradient green-400 → green-600
+  - Description paragraph: font-light, text-xl
+  - Stats Grid: 2x2 grid with gap-px (hairline separator) — brutalist style
+
+  STAT CARDS (each):
+    - bg-[#0a0a0a] dark / bg-white light, hover: slight bg tint
+    - Tiny log ID in top-left (e.g. "LOG-001") in monospace neutral-500
+    - Large number: text-5xl → text-6xl, font-bold, tracking-tighter (white/black)
+    - Number animates from 0 to final value on mount (1.5s, 60 steps)
+    - Suffix in green-500 text-2xl "+" or "%"
+    - Label: uppercase, tracking-widest, text-xs, Space Grotesk
+    - Detail: text-[10px] uppercase neutral-500
+    - Corner: icon appears at 10% opacity → 100% on group hover (green-500)
+
+  Stats: "50,000+ Animals Tracked", "45% Milk Yield Increase",
+         "100% Data Security", "24/7 Farm Support"
+
+RIGHT SIDE (Cinematic Visuals):
+  - Stack of 2 image panels (each flex-1)
+  - Images: grayscale + brightness-50 by default (dark and desaturated)
+  - On hover: grayscale-0 + brightness-100 + scale-100 (color and zoom reveal)
+  - gradient overlay on each: from-black/70 bottom to transparent
+  - Bottom-left badge on each panel: dark glass backdrop, green icon, white label
+  - Animated scan line: a 2px green line sweeps downward (CSS keyframe animation)
+    "Herd Telemetry" panel + "Farm Operations" panel
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 8 — TESTIMONIALS (components/Testimonials.jsx)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+LAYOUT: py-32, max-w-7xl, subtle grid background overlay
+
+HEADER:
+  - H2: "Trusted by" + line break + "Livestock Farmers."
+    "Livestock Farmers." = gradient green-400 → green-700
+  - Beside it (desktop only): a stats box with 98.4% Satisfaction + 99.1% Retention
+
+SCROLLING TESTIMONIALS GRID (700px height, 3 columns):
+  - 3 columns, each auto-scrolling vertically at different speeds
+    Column 1: 35s duration, scrolling UP
+    Column 2: 45s duration, scrolling DOWN (reverse)
+    Column 3: 40s duration, scrolling UP
+  - Cards are triplicated to create seamless infinite loop
+  - Hovering a column PAUSES its animation
+  - Top/Bottom fade gradients (from background color → transparent)
+
+  EACH TESTIMONIAL CARD:
+    - Top-left: small "[FARM-A102] // VERIFIED" in green-500/60 monospace
+    - Top-right: Quote icon (turns green on group hover)
+    - Quote text: font-light, text-sm, italic style (quotes wrapped in "" characters)
+    - User avatar: 10x10, grayscale + contrast-125 by default → full color on hover
+      + green corner accents overlaid (2px top-left + bottom-right)
+    - Name: Space Grotesk bold xs uppercase tracking-wider
+    - Role: mono text-[9px] neutral-500
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 9 — PRICING CARDS (components/cards/PricingCards.jsx)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+LAYOUT: min-h-screen, max-w-7xl, grid lg:grid-cols-3
+
+SECTION HEADER:
+  - H2: "Choose Your" + line break + "Power Level."
+    "Power Level." = gradient green-400 → green-700
+
+BILLING TOGGLE (Monthly / Annual):
+  - Pill-shaped toggle with two buttons side by side
+  - Active: bg-green-500 text-black + glowing shadow
+  - Annual shows "[-20%]" discount hint in small text
+
+PRICING CARDS (3 plans: Starter / Professional / Enterprise):
+  On hover: card lifts upward (-translate-y-4), glows green, border turns green
+  Default: flat, subtle border
+
+  Card internals:
+    - Top: small plan ID badge (e.g. "STARTER_PLAN") in mono green bordered
+    - Plan icon (Zap / Crown / Sparkles) — turns green on hover
+    - Technical corner markers (2px corner accent)
+    - Plan name: Space Grotesk bold text-3xl uppercase
+    - Description: monospace text-xs
+    - Price box (bordered inner box):
+        "$" in green-500, large number in text-5xl Space Grotesk, "/mo" in mono
+        Price changes dynamically between monthly and annual
+    - Specs table:
+        Each spec: label (text-[10px] uppercase) + value (mono text-[11px], turns green on hover)
+        Separator: border-b between rows
+    - "Get Started" button: fills green on hover
+      Inactive: light bg + bordered
+
+  "SYSTEM TRUST BAR" below cards:
+    - 3 columns: 30-day money back | No Credit Card | Under 5 Min Setup
+    - Each with a green-500/50 icon
+
+  Bottom footnote: "// Start with a 30-day free trial..." in mono tiny text
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 10 — FOOTER (components/Footer.jsx)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+APPEARANCE: Always dark (bg-[#050505]), not theme-sensitive
+  - pt-24, border-t border-white/5
+
+MAIN GRID (4 columns bordered grid):
+  Column 1 — Brand Module:
+    - "HERD" in white + "ERP" in green-500 (Space Grotesk, text-3xl, uppercase, tracking-tighter)
+    - Under the name: "// LIVESTOCK_PLATFORM" in tiny mono green-500/50
+    - Short description paragraph
+    - 3 icon buttons (Globe, Terminal, ShieldCheck): bordered squares → hover: bg-green-500
+
+  Column 2 — "01 // Platform": Features, Pricing Plans, Integrations, API Docs, System Status
+  Column 3 — "02 // Solutions": Herd Management, Farm Analytics, Milk Tracking, Inventory, Health Reports
+  Column 4 — "03 // Support": Contact Support, Documentation, What's New, Resources, Security
+
+  Nav links styled: text-[11px] uppercase bold text-white/50 → hover: text-green-400
+  Hover shows a small "▶" prefix that appears on hover
+
+NEWSLETTER SUBSCRIPTION AREA (below main grid):
+  - Left: heading "Built for Livestock Farmers. Trusted in the Field."
+  - Right: Terminal-style email input
+    - ">" chevron prefix (green)
+    - Minimal borderless input (border-b only), mono font, UPPERCASE placeholder
+    - "Execute" button (border-b only) → hover: bg-green-500 text-black
+
+BOTTOM METADATA BAR:
+  - Pulsing green dot: "System: Operational"
+  - Network_Latency stat, Build version, Dev credit
+  - Privacy / Terms / Compliance links (right side)
+  - All in font-mono text-[9px] neutral-500
+
+ANIMATED PROGRESS LINE:
+  - 2px h-full green line slides across the very bottom of footer (3s loop)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 11 — LOGIN PAGE (components/Login.jsx)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+LAYOUT: min-h-screen, centered two-column card (max-w-7xl)
+  Card: sharp rectangle, dark glowing green shadow or light shadow-2xl
+
+BACKGROUND:
+  - Grid pattern + green glow blob (top-left)
+
+SPLIT CARD:
+  ----------------------------------
+  LEFT PANEL (info / branding):
+  ----------------------------------
+    Background: bg-neutral-950/80 (dark) / bg-neutral-50 (light)
+    Green corner accents (top-left + bottom-right)
+
+    - Logo (/erp-logo.png)
+    - "System Active" badge: green ping dot + green monospace text
+    - H1: "Modern Livestock" + "Reliable Results" (gradient green)
+    - Description paragraph
+    - 4-item stats grid (2x2):
+        Each: icon (green-500), value (bold), label (mono)
+        50K+ Animals | 99.9% Uptime | 24/7 Support | SECURE Data
+    - Bottom footer: Terminal icon + "Authentication Protocol v4.0"
+                     + "End-to-end encrypted connection established"
+
+  ----------------------------------
+  RIGHT PANEL (login form):
+  ----------------------------------
+    Background: bg-neutral-900/80 (dark) / bg-white (light)
+
+    Title: "Welcome Back" (Space Grotesk bold text-3xl uppercase)
+    Error/Success: colored alert boxes
+
+    Form Fields:
+      - Email: labeled with Mail icon, mono font input, focus → green border
+      - Password: labeled with Lock icon + Eye/EyeOff toggle button
+
+    Options row:
+      - Checkbox "Remember" (accent-green-500)
+      - "Forgot_Password?" link (green-500, mono font, underscore style)
+
+    Submit Button:
+      - Full width, bg-green-600 → hover: bg-green-500
+      - Shield icon + "Login" text + ArrowRight (moves right on hover)
+      - Glowing shadow: shadow-[0_0_30px_rgba(34,197,94,0.3)]
+
+    OR divider (centered "OR" on a horizontal line)
+
+    Sign Up link at bottom
+
+    Security notice box at bottom:
+      - Shield icon + "Secure Connection" + description
+      - Subtle bordered box
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 12 — SIGNUP PAGE (components/SignUp.jsx)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Nearly identical layout to Login — same split two-column card design.
+
+LEFT PANEL DIFFERENCES:
+  - "Access_Protocol_v4.0" badge with Terminal icon
+  - H1: "Transform Your" + "Livestock Journey" (gradient green)
+  - 3 feature panels (instead of stats):
+      Each: green icon in bordered square + title + description
+      Features: "Herd Health Tracking", "Breeding Management", "Secure Data Storage"
+  - "System Status: Operational" pulsing green dot at bottom
+
+RIGHT PANEL (form fields):
+  - "Create Your Account" heading
+  - 5 fields: Full Name (User icon), Farm Name (Building2 icon),
+               Email (Mail icon), Password (Lock icon), Confirm Password (Lock icon)
+  - All inputs: same style as login (bordered, mono font, focus → green-500 border)
+  - Password fields have Eye/EyeOff toggles
+
+  Submit Button:
+    - bg-green-600 → bg-green-500 on hover
+    - Zap icon + "Create Account" + ArrowRight sliding right on hover
+    - Same green glow shadow as login button
+
+  OR divider + "Sign In →" link
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 13 — DASHBOARD LAYOUT (components/dashboard/Navbar.jsx)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The dashboard uses a classic sidebar + top navbar layout.
+
+SIDEBAR:
+  Position: fixed left-0, full height, z-50
+  Width: 72 when OPEN (w-72) / COLLAPSED (w-20)
+  Transition: smooth duration-300
+  Color:
+    Dark:  bg-neutral-950 + border-r border-white/10
+    Light: bg-white + border-r border-neutral-200
+
+  LOGO AREA (top 80px):
+    - Expanded: shows /erp-logo.png (h-28)
+    - Collapsed: shows a green lettermark square "F"
+    - Animated green accent line slides back and forth at the bottom edge
+
+  NAVIGATION SECTIONS (grouped):
+    OVERVIEW:      Dashboard
+    FARM OPS:      Livestock Management (collapsible) + Milk Management (collapsible)
+                   + Inventory + Finances + Staff
+    RELATIONSHIPS: Customers
+    SYSTEM:        Subscription
+
+    Section headers: tiny font-mono uppercase tracking-[0.25em] with a short green line prefix
+
+    NAV ITEM STYLES (per item):
+      - Default: text-neutral-400 → hover:text-green-400 (dark)
+                 text-neutral-600 → hover:text-neutral-900 (light)
+      - Active:  bg-green-500/10 text-green-400 (dark) / bg-green-50 text-green-700 (light)
+                 + vertical 2px green bar on left edge
+      - Icons scale-110 when active
+
+    COLLAPSIBLE ITEMS (Livestock / Milk Management):
+      - Chevron right → down when expanded
+      - Sub-items shown indented with a left border (border-l)
+      - Sub-item active: green text + small green dot on left
+
+    COLLAPSED SIDEBAR MODE:
+      - Only icons shown, centered
+      - Tooltip title attribute for accessibility
+
+  SUBSCRIPTION BADGE (bottom of sidebar, visible when expanded):
+    - Gradient green panel
+    - Shows "Pro Plan" + "Valid until Dec 2024" + "ACTIVE" badge
+    - "Manage Plan" bordered button
+
+SIDEBAR TOGGLE BUTTON:
+  - Floats at left edge (fixed top-24), positioned at sidebar edge
+  - ChevronLeft / ChevronRight icon
+  - hover: scale-110, green border highlight
+
+TOP NAVBAR:
+  - Position: sticky top-0, h-20, z-40
+  - backdrop-blur-xl
+  - Dark:  bg-neutral-950/90 border-b border-white/10
+  - Light: bg-white/90 border-b border-neutral-200
+
+  Controls (right side):
+    1. Theme toggle: Sun / Moon icon, small square bordered button
+    2. Notifications bell: small badge with animated red ping dot
+    3. User profile section (with border-l divider):
+         Name + role (right-aligned text, hidden on mobile)
+         Avatar circle (10x10):
+           - If photo uploaded: shows photo
+           - Else: user initials (green gradient bg)
+           - Border turns green-400 + ring on click
+         Dropdown menu on click:
+           - Profile picture + name + role
+           - "Upload Photo" / "Change Photo" button
+           - "Remove Photo" button
+           - Logout button (red hover color)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 14 — KEY UX PATTERNS SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. SCROLL-TRIGGERED EFFECTS:
+   - Header becomes opaque and shrinks after 20px scroll
+   - Hero text + background have parallax scroll effects
+
+2. MICRO-ANIMATIONS:
+   - Hover underlines on nav links (w-0 → w-full)
+   - Button arrows translate-x on hover
+   - Cards lift on hover (-translate-y-4) in pricing section
+   - Green glow intensifies on hover across many interactive elements
+   - Icons scale(1.1) on active/hover
+   - Avatar scales on hover in navbar
+
+3. INFINITE LOOPS:
+   - Image ticker scrolls left forever (hero bottom)
+   - Testimonial columns scroll up/down forever
+   - Scan lines animate top-to-bottom forever
+   - Footer progress bar slider animates forever
+   - Sidebar accent line slides back and forth
+
+4. THEME SWITCHING:
+   - Instant toggle, all colors defined conditionally
+   - Dark: near-black neutrals, green accents, subtle white borders
+   - Light: white/neutral backgrounds, stronger borders, same green accents
+
+5. LOADING / FEEDBACK STATES:
+   - Login/Signup submit button shows "Logging In..." / "Creating Account..."
+   - Error: red box with text; Success: green box with text
+   - Profile photo upload disables button and shows "Uploading..."
+
+6. MODAL / OVERLAY:
+   - Video modal opens with spring animation, closes on ESC or backdrop click
+   - Mobile menu slides in from right (spring damped)
+   - Profile dropdown fades in, closes on click outside
+
+7. TECHNICAL / BRUTALIST DETAILS:
+   - Corner accents (2px border in corners of cards/modals) → signature look
+   - Monospace IDs on every card (LOG-001, FARM-A102, STARTER_PLAN)
+   - Code-comment style text in UI (e.g., "// Real-time monitoring")
+   - All labels UPPERCASE with wide letter spacing (tracking-widest)
+   - Pinging dots for live/active system status indicators
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 15 — FILES ANALYZED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+app/globals.css                     — Base CSS variables, theme tokens
+app/layout.tsx                      — Root layout, fonts loaded (Geist Sans + Geist Mono)
+app/page.tsx                        — Landing page composition
+tailwind.config.ts                  — Tailwind setup (darkMode: 'class')
+components/Header.jsx               — Sticky navbar
+components/HeroSection.jsx          — Video hero with parallax + ticker
+components/HeroScroll.jsx           — 3D dashboard preview + video modal
+components/cards/FeatureCards.jsx   — 3D perspective carousel of features
+components/TrustBuilding.jsx        — Split stats + cinematic images
+components/Testimonials.jsx         — 3-column scrolling testimonial grid
+components/cards/PricingCards.jsx   — 3-tier pricing with hover lift effects
+components/Footer.jsx               — Dark technical footer
+components/Login.jsx                — 2-column split login form
+components/SignUp.jsx               — 2-column split registration form
+components/dashboard/Navbar.jsx     — Collapsible sidebar + top navbar
+
+================================================================================
+                          END OF DOCUMENTATION
+================================================================================

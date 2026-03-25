@@ -1,0 +1,393 @@
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,200..900;1,200..900&display=swap');
+@import "tailwindcss";
+/* =====================================================
+   HERDERP DESIGN SYSTEM — CSS VARIABLES & KEYFRAMES
+
+   ===================================================== */
+
+
+
+
+:root {
+  /* ── Typography — change fonts here to update the entire project ── */
+  --font-body: "Source Sans 3", sans-serif;
+  --font-display: "Source Sans 3", sans-serif;
+  --font-mono: monospace;
+
+  /* ── Colours ── */
+  --primary-green: #22c55e;
+  --bg-dark: #070708;
+  --bg-card: #0d0d0f;
+  --bg-card-hover: #111113;
+  --card-border: rgba(255, 255, 255, 0.07);
+  --glow-green: rgba(34, 197, 94, 0.2);
+  --olive: #6b8e23;
+  --amber: #f59e0b;
+  --background: #ffffff;
+  --foreground: #171717;
+  --warm-white: #f5f3ef;
+  --warm-cream: #ede9e3;
+}
+
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-mono);
+  --font-display: var(--font-display);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #070708;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  /* Single source of truth — all text inherits this font */
+  font-family: var(--font-body);
+}
+
+/* =====================================================
+   CUSTOM CURSOR
+   ===================================================== */
+/* *, *::before, *::after {
+  cursor: none !important;
+} */
+
+.cursor-ring {
+  position: fixed;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid rgba(34, 197, 94, 0.65);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 99999;
+  transform: translate(-50%, -50%);
+  transition: transform 0.08s ease, width 0.15s ease, height 0.15s ease,
+    background 0.15s ease, border-color 0.15s ease;
+  mix-blend-mode: difference;
+}
+
+.cursor-ring.is-hovering {
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  border-color: #22c55e;
+}
+
+/* =====================================================
+   KEYFRAME ANIMATIONS
+   ===================================================== */
+
+/* Breathing glow for primary CTA */
+@keyframes breathe {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
+  }
+
+  50% {
+    box-shadow: 0 0 45px rgba(34, 197, 94, 0.55);
+  }
+}
+
+.animate-breathe {
+  animation: breathe 3s ease-in-out infinite;
+}
+
+/* Shimmer on hover of CTA button */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) skewX(-12deg);
+  }
+
+  100% {
+    transform: translateX(300%) skewX(-12deg);
+  }
+}
+
+.shimmer-on-hover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%);
+  transform: translateX(-100%) skewX(-12deg);
+  transition: none;
+}
+
+.shimmer-on-hover:hover::after {
+  animation: shimmer 0.55s ease forwards;
+}
+
+/* Section scan line */
+@keyframes scan {
+  0% {
+    top: -2%;
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    top: 102%;
+    opacity: 0;
+  }
+}
+
+.animate-scan {
+  animation: scan 4s linear infinite;
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent 0%, rgba(34, 197, 94, 0.65) 50%, transparent 100%);
+  z-index: 20;
+}
+
+.animate-scan-amber {
+  animation: scan 4s linear infinite 2s;
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent 0%, rgba(245, 158, 11, 0.65) 50%, transparent 100%);
+  z-index: 20;
+}
+
+/* Data-stream footer progress */
+@keyframes progress-packets {
+  0% {
+    background-position: 0 0;
+  }
+
+  100% {
+    background-position: 160px 0;
+  }
+}
+
+.footer-progress-line {
+  height: 2px;
+  width: 100%;
+  background: repeating-linear-gradient(90deg,
+      #22c55e 0px, #22c55e 4px,
+      transparent 4px, transparent 16px);
+  animation: progress-packets 1.2s linear infinite;
+}
+
+/* Corner accent grow on hover */
+@keyframes corner-grow {
+  0% {
+    width: 6px;
+    height: 6px;
+  }
+
+  100% {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* Crosshair slow rotation */
+@keyframes rotate-slow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-rotate-slow {
+  animation: rotate-slow 8s linear infinite;
+}
+
+/* Slide accent bar */
+@keyframes slideAccent {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  50% {
+    transform: translateX(150%);
+  }
+}
+
+/* Pulsing dot */
+@keyframes pulseDot {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+}
+
+.animate-pulse-dot {
+  animation: pulseDot 2s ease-in-out infinite;
+}
+
+/* Vertical scroll for testimonials */
+@keyframes scroll-up {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-33.33%);
+  }
+}
+
+@keyframes scroll-down {
+  from {
+    transform: translateY(-33.33%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-scroll-up {
+  animation: scroll-up linear infinite;
+  will-change: transform;
+}
+
+.animate-scroll-down {
+  animation: scroll-down linear infinite;
+  will-change: transform;
+}
+
+/* System status widget expand */
+.status-widget {
+  transition: height 0.3s ease, width 0.3s ease;
+}
+
+/* =====================================================
+   TYPOGRAPHY UTILITIES
+   ===================================================== */
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+.font-mono-custom {
+  font-family: var(--font-mono);
+}
+
+/* Heading optical sizing */
+.heading-hero {
+  letter-spacing: -0.04em;
+  line-height: 0.88;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.heading-section {
+  letter-spacing: -0.03em;
+  line-height: 0.9;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+/* Green text glow effect */
+.text-glow-green {
+  text-shadow: 0 0 40px rgba(34, 197, 94, 0.4);
+}
+
+/* =====================================================
+   LIGHT MODE SECTION ALTERNATING BG
+   ===================================================== */
+.section-warm-a {
+  background-color: #f5f3ef;
+}
+
+.section-warm-b {
+  background-color: #ede9e3;
+}
+
+.section-white {
+  background-color: #ffffff;
+}
+
+/* =====================================================
+   SCROLLBAR
+   ===================================================== */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(34, 197, 94, 0.3);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 197, 94, 0.6);
+}
+
+/* =====================================================
+   FOCUS RINGS (accessibility)
+   ===================================================== */
+:focus-visible {
+  outline: 2px solid #22c55e;
+  outline-offset: 2px;
+}
+
+/* =====================================================
+   REDUCED MOTION
+   ===================================================== */
+@media (prefers-reduced-motion: reduce) {
+
+  .animate-breathe,
+  .animate-scan,
+  .animate-scan-amber,
+  .animate-scroll-up,
+  .animate-scroll-down,
+  .animate-rotate-slow,
+  .footer-progress-line,
+  .shimmer-on-hover::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Disable framer-motion animations globally */
+  [data-framer-component-type],
+  [style*="transform"] {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  /* Framer motion sets animation via inline style — override */
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
