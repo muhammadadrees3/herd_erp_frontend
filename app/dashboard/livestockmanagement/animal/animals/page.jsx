@@ -317,11 +317,11 @@ export default function AnimalsManagement() {
       status: formData.status,
       healthStatus: formData.healthStatus,
       breedId: formData.breedId ? parseInt(formData.breedId) : null,
-      breed: formData.breed,
+      breed: formData.breed || null,
       motherId: formData.motherId ? parseInt(formData.motherId) : null,
       fatherId: formData.fatherId ? parseInt(formData.fatherId) : null,
-      shedId: formData.shedId,
-      registrationDate: formData.registrationDate
+      shedId: formData.shedId ? parseInt(formData.shedId) : null,
+      registrationDate: formData.registrationDate || null
     };
 
     try {

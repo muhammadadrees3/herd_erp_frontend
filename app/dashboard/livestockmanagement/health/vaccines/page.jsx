@@ -6,7 +6,7 @@ import axiosInstance from '@/utils/axios';
 import healthService from '@/services/healthService';
 import animalService from '@/services/animalService';
 import Cookies from 'js-cookie';
-import { 
+import {
   Home, Search, Filter, Plus, Eye, Edit, Trash2, ChevronDown, X, Syringe
 } from 'lucide-react';
 import { Space_Grotesk, Inter } from "next/font/google";
@@ -20,7 +20,7 @@ const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"] }
 const serif = "var(--font-display)";
 
 export default function VaccinesManagement() {
-  const [isDark, setIsDark] = useState(false); 
+  const [isDark, setIsDark] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
@@ -60,7 +60,7 @@ export default function VaccinesManagement() {
     try {
       setLoading(true);
       const data = await healthService.getVaccines();
-      
+
       if (data && data.success && Array.isArray(data.data)) {
         setVaccines(data.data);
         localStorage.setItem('livestockVaccines', JSON.stringify(data.data));
@@ -123,7 +123,7 @@ export default function VaccinesManagement() {
   }, [vaccines]);
 
   const filteredVaccines = vaccines.filter(vaccine => {
-    const matchesSearch = 
+    const matchesSearch =
       (vaccine.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
       (vaccine.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     const matchesRotation = selectedRotation === 'all' || vaccine.rotation === parseInt(selectedRotation);
@@ -184,16 +184,16 @@ export default function VaccinesManagement() {
   // Submit Handler - API Integration
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     const requiredFields = ["name", "diseasePurpose", "applicableSpecies", "dosage", "numberDoses", "doseInterval"];
     for (const field of requiredFields) {
       if (!formData[field]) {
         return; // Potential toast or error message here
       }
     }
-    
+
     setSubmitting(true);
-    
+
     try {
       if (editingVaccine) {
         const data = await healthService.updateVaccine(editingVaccine.id || editingVaccine._id, {
@@ -212,16 +212,16 @@ export default function VaccinesManagement() {
           await fetchVaccines();
         }
       }
-      
+
       handleCloseForm();
-      
+
       // Clear search and filter when adding new record
       setSearchTerm('');
       setSelectedRotation('all');
-      
+
     } catch (error) {
       console.error("API Error, saving locally:", error);
-      
+
       // Fallback to localStorage if API fails
       const newVaccine = {
         id: editingVaccine ? (editingVaccine.id || editingVaccine._id) : Date.now(),
@@ -233,24 +233,24 @@ export default function VaccinesManagement() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
-      
+
       let updatedRecords;
       if (editingVaccine) {
-        updatedRecords = vaccines.map(vaccine => 
+        updatedRecords = vaccines.map(vaccine =>
           (vaccine.id || vaccine._id) === (editingVaccine.id || editingVaccine._id) ? newVaccine : vaccine
         );
       } else {
         updatedRecords = [newVaccine, ...vaccines];
       }
-      
+
       setVaccines(updatedRecords);
       localStorage.setItem('livestockVaccines', JSON.stringify(updatedRecords));
       handleCloseForm();
-      
+
       // Clear search and filter when adding new record (even on error)
       setSearchTerm('');
       setSelectedRotation('all');
-      
+
     } finally {
       setSubmitting(false);
     }
@@ -263,7 +263,7 @@ export default function VaccinesManagement() {
       await fetchVaccines();
     } catch (error) {
       console.error("Delete failed, deleting locally:", error);
-      const updatedRecords = vaccines.filter(vaccine => 
+      const updatedRecords = vaccines.filter(vaccine =>
         (vaccine.id || vaccine._id) !== id
       );
       setVaccines(updatedRecords);
@@ -293,10 +293,9 @@ export default function VaccinesManagement() {
   const isActive = (path) => pathname === path;
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${inter.className} ${
-      isDark ? 'bg-neutral-950 text-white' : 'bg-neutral-50 text-neutral-900'
-    }`}>
-      
+    <div className={`min-h-screen transition-colors duration-300 ${inter.className} ${isDark ? 'bg-neutral-950 text-white' : 'bg-neutral-50 text-neutral-900'
+      }`}>
+
       {/* ENHANCED BACKGROUND TEXTURE */}
       <div className="fixed inset-0 pointer-events-none z-0">
         {isDark ? (
@@ -314,7 +313,7 @@ export default function VaccinesManagement() {
 
       {/* OVERLAY FOR MODALS */}
       {(showVaccineForm || deleteConfirm || viewingVaccine) && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
           onClick={() => {
             handleCloseForm();
@@ -325,10 +324,10 @@ export default function VaccinesManagement() {
       )}
 
       {/* NAVBAR WITH SIDEBAR */}
-      <Navbar 
-        isDark={isDark} 
-        setIsDark={setIsDark} 
-        sidebarOpen={sidebarOpen} 
+      <Navbar
+        isDark={isDark}
+        setIsDark={setIsDark}
+        sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
         searchPlaceholder="Search vaccines..."
       />
@@ -336,7 +335,7 @@ export default function VaccinesManagement() {
       {/* MAIN CONTENT */}
       <div className={`${sidebarOpen ? 'lg:ml-72' : 'ml-0'} transition-all duration-300 relative z-10`}>
         <main className="p-6 lg:p-10 max-w-[1600px] mx-auto space-y-8">
-          
+
           {/* MODERNIZED TITLE & TABS */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
@@ -359,67 +358,62 @@ export default function VaccinesManagement() {
                 <span className="text-xs text-green-500 font-mono mt-2">SYNCING_DATA...</span>
               )}
             </div>
-            
+
             {/* Enhanced Tab Navigation */}
-            <div className={`flex p-1.5 border backdrop-blur-md ${
-              isDark ? 'bg-neutral-900/50 border-white/10' : 'bg-white border-neutral-300 shadow-sm'
-            }`}>
+            <div className={`flex p-1.5 border backdrop-blur-md ${isDark ? 'bg-neutral-900/50 border-white/10' : 'bg-white border-neutral-300 shadow-sm'
+              }`}>
               <Link href="/dashboard/livestockmanagement/health/veterinarians">
-                <button 
-                  className={`cursor-pointer px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
-                    isActive('/dashboard/livestockmanagement/health/veterinarians')
-                      ? isDark
-                        ? 'bg-green-500/10 text-green-400 border border-green-500/20' 
-                        : 'bg-green-500/10 text-green-700 border border-green-500/30'
-                      : isDark 
-                        ? 'text-neutral-400 hover:text-green-400 hover:bg-white/5' 
-                        : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'
-                  }`}
+                <button
+                  className={`cursor-pointer px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${isActive('/dashboard/livestockmanagement/health/veterinarians')
+                    ? isDark
+                      ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                      : 'bg-green-500/10 text-green-700 border border-green-500/30'
+                    : isDark
+                      ? 'text-neutral-400 hover:text-green-400 hover:bg-white/5'
+                      : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'
+                    }`}
                 >
                   Veterinarians
                 </button>
               </Link>
               <Link href="/dashboard/livestockmanagement/health/vaccines">
-                <button 
-                  className={`cursor-pointer px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
-                    isActive('/dashboard/livestockmanagement/health/vaccines')
-                      ? isDark
-                        ? 'bg-green-500/10 text-green-400 border border-green-500/20' 
-                        : 'bg-green-500/10 text-green-700 border border-green-500/30'
-                      : isDark 
-                        ? 'text-neutral-400 hover:text-green-400 hover:bg-white/5' 
-                        : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'
-                  }`}
+                <button
+                  className={`cursor-pointer px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${isActive('/dashboard/livestockmanagement/health/vaccines')
+                    ? isDark
+                      ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                      : 'bg-green-500/10 text-green-700 border border-green-500/30'
+                    : isDark
+                      ? 'text-neutral-400 hover:text-green-400 hover:bg-white/5'
+                      : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'
+                    }`}
                 >
                   Vaccines
                 </button>
               </Link>
               <Link href="/dashboard/livestockmanagement/health/records">
-                <button 
-                  className={`cursor-pointer px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
-                    isActive('/dashboard/livestockmanagement/health/records')
-                      ? isDark
-                        ? 'bg-green-500/10 text-green-400 border border-green-500/20' 
-                        : 'bg-green-500/10 text-green-700 border border-green-500/30'
-                      : isDark 
-                        ? 'text-neutral-400 hover:text-green-400 hover:bg-white/5' 
-                        : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'
-                  }`}
+                <button
+                  className={`cursor-pointer px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${isActive('/dashboard/livestockmanagement/health/records')
+                    ? isDark
+                      ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                      : 'bg-green-500/10 text-green-700 border border-green-500/30'
+                    : isDark
+                      ? 'text-neutral-400 hover:text-green-400 hover:bg-white/5'
+                      : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'
+                    }`}
                 >
                   Health Records
                 </button>
               </Link>
               <Link href="/dashboard/livestockmanagement/health/vaccinations">
-                <button 
-                  className={`cursor-pointer px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
-                    isActive('/dashboard/livestockmanagement/health/vaccinations')
-                      ? isDark
-                        ? 'bg-green-500/10 text-green-400 border border-green-500/20' 
-                        : 'bg-green-500/10 text-green-700 border border-green-500/30'
-                      : isDark 
-                        ? 'text-neutral-400 hover:text-green-400 hover:bg-white/5' 
-                        : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'
-                  }`}
+                <button
+                  className={`cursor-pointer px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${isActive('/dashboard/livestockmanagement/health/vaccinations')
+                    ? isDark
+                      ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                      : 'bg-green-500/10 text-green-700 border border-green-500/30'
+                    : isDark
+                      ? 'text-neutral-400 hover:text-green-400 hover:bg-white/5'
+                      : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'
+                    }`}
                 >
                   Vaccinations
                 </button>
@@ -432,18 +426,16 @@ export default function VaccinesManagement() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className={`h-[2px] w-8 ${isDark ? 'bg-green-500/50' : 'bg-green-500'}`} />
-                <h2 className={`text-[10px] font-black uppercase tracking-[0.25em] font-mono ${
-                  isDark ? 'text-neutral-400' : 'text-neutral-500'
-                }`}>
+                <h2 className={`text-[10px] font-black uppercase tracking-[0.25em] font-mono ${isDark ? 'text-neutral-400' : 'text-neutral-500'
+                  }`}>
                   Vaccine Inventory
                 </h2>
               </div>
-              <button 
-                className={`cursor-pointer group flex items-center gap-2 px-5 py-3 border transition-all duration-200 font-bold text-[11px] uppercase tracking-widest ${
-                  isDark 
-                    ? 'bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700' 
-                    : 'bg-green-600 hover:bg-green-700 text-white border-green-600 shadow-sm'
-                }`}
+              <button
+                className={`cursor-pointer group flex items-center gap-2 px-5 py-3 border transition-all duration-200 font-bold text-[11px] uppercase tracking-widest ${isDark
+                  ? 'bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700'
+                  : 'bg-green-600 hover:bg-green-700 text-white border-green-600 shadow-sm'
+                  }`}
                 onClick={() => handleOpenForm()}
                 disabled={submitting}
               >
@@ -457,9 +449,8 @@ export default function VaccinesManagement() {
           <section className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Search Card */}
-              <div className={`relative p-5 border group/search ${
-                isDark ? 'bg-neutral-900/50 border-white/5' : 'bg-white border-neutral-300 shadow-sm'
-              }`}>
+              <div className={`relative p-5 border group/search ${isDark ? 'bg-neutral-900/50 border-white/5' : 'bg-white border-neutral-300 shadow-sm'
+                }`}>
                 <div className="flex items-center gap-3">
                   <Search className={`w-5 h-5 ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`} />
                   <input
@@ -467,32 +458,28 @@ export default function VaccinesManagement() {
                     placeholder="Search vaccines..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className={`flex-1 bg-transparent outline-none text-sm font-medium ${
-                      isDark ? 'placeholder:text-neutral-600' : 'placeholder:text-neutral-400'
-                    }`}
+                    className={`flex-1 bg-transparent outline-none text-sm font-medium ${isDark ? 'placeholder:text-neutral-600' : 'placeholder:text-neutral-400'
+                      }`}
                   />
                   {searchTerm && (
                     <button
                       onClick={handleClearSearch}
-                      className={`p-1 transition-all ${
-                        isDark ? 'hover:text-white text-neutral-400' : 'hover:text-neutral-900 text-neutral-500'
-                      }`}
+                      className={`p-1 transition-all ${isDark ? 'hover:text-white text-neutral-400' : 'hover:text-neutral-900 text-neutral-500'
+                        }`}
                     >
                       <X className="w-4 h-4" />
                     </button>
                   )}
                 </div>
-                <div className={`absolute bottom-0 left-0 h-[2px] w-0 group-hover/search:w-full transition-all duration-500 ${
-                  isDark ? 'bg-green-500' : 'bg-green-600'
-                }`} />
+                <div className={`absolute bottom-0 left-0 h-[2px] w-0 group-hover/search:w-full transition-all duration-500 ${isDark ? 'bg-green-500' : 'bg-green-600'
+                  }`} />
                 <CornerBrackets />
               </div>
 
               {/* Filter Card */}
               <div className="relative">
-                <div className={`relative p-5 border cursor-pointer transition-all ${
-                  isDark ? 'bg-neutral-900/50 border-white/5 hover:border-green-500/20' : 'bg-white border-neutral-300 hover:border-green-500/30 shadow-sm'
-                }`} onClick={() => setFilterOpen(!filterOpen)}>
+                <div className={`relative p-5 border cursor-pointer transition-all ${isDark ? 'bg-neutral-900/50 border-white/5 hover:border-green-500/20' : 'bg-white border-neutral-300 hover:border-green-500/30 shadow-sm'
+                  }`} onClick={() => setFilterOpen(!filterOpen)}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Filter className={`w-4 h-4 ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`} />
@@ -506,23 +493,21 @@ export default function VaccinesManagement() {
                 </div>
 
                 {filterOpen && (
-                  <div className={`absolute top-full mt-2 right-0 w-full border shadow-xl overflow-hidden z-20 backdrop-blur-md ${
-                    isDark ? 'bg-neutral-900/95 border-white/10' : 'bg-white/95 border-neutral-200'
-                  }`}>
+                  <div className={`absolute top-full mt-2 right-0 w-full border shadow-xl overflow-hidden z-20 backdrop-blur-md ${isDark ? 'bg-neutral-900/95 border-white/10' : 'bg-white/95 border-neutral-200'
+                    }`}>
                     <button
                       onClick={() => {
                         setSelectedRotation('all');
                         setFilterOpen(false);
                       }}
-                      className={`cursor-pointer w-full px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider transition-colors ${
-                        selectedRotation === 'all'
-                          ? isDark
-                            ? 'bg-green-500/10 text-green-400 border-l-2 border-green-400'
-                            : 'bg-green-50 text-green-700 border-l-2 border-green-600'
-                          : isDark
+                      className={`cursor-pointer w-full px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider transition-colors ${selectedRotation === 'all'
+                        ? isDark
+                          ? 'bg-green-500/10 text-green-400 border-l-2 border-green-400'
+                          : 'bg-green-50 text-green-700 border-l-2 border-green-600'
+                        : isDark
                           ? 'hover:bg-white/5'
                           : 'hover:bg-neutral-50'
-                      }`}
+                        }`}
                     >
                       All Rotations
                     </button>
@@ -533,15 +518,14 @@ export default function VaccinesManagement() {
                           setSelectedRotation(rotation);
                           setFilterOpen(false);
                         }}
-                        className={`cursor-pointer w-full px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider transition-colors ${
-                          selectedRotation === rotation
-                            ? isDark
-                              ? 'bg-green-500/10 text-green-400 border-l-2 border-green-400'
-                              : 'bg-green-50 text-green-700 border-l-2 border-green-600'
-                            : isDark
+                        className={`cursor-pointer w-full px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider transition-colors ${selectedRotation === rotation
+                          ? isDark
+                            ? 'bg-green-500/10 text-green-400 border-l-2 border-green-400'
+                            : 'bg-green-50 text-green-700 border-l-2 border-green-600'
+                          : isDark
                             ? 'hover:bg-white/5'
                             : 'hover:bg-neutral-50'
-                        }`}
+                          }`}
                       >
                         {rotation} {parseInt(rotation) === 1 ? 'Dose' : 'Doses'}
                       </button>
@@ -556,30 +540,27 @@ export default function VaccinesManagement() {
           <section className="space-y-6">
             <div className="flex items-center gap-3">
               <div className={`h-[2px] w-8 ${isDark ? 'bg-amber-500/50' : 'bg-amber-500'}`} />
-              <h2 className={`text-[10px] font-black uppercase tracking-[0.25em] font-mono ${
-                isDark ? 'text-neutral-400' : 'text-neutral-500'
-              }`}>
+              <h2 className={`text-[10px] font-black uppercase tracking-[0.25em] font-mono ${isDark ? 'text-neutral-400' : 'text-neutral-500'
+                }`}>
                 All Vaccines
               </h2>
               <button
                 onClick={fetchVaccines}
                 disabled={loading}
-                className={`ml-auto text-xs font-mono px-3 py-1 border transition-all ${
-                  loading 
-                    ? 'opacity-50 cursor-not-allowed' 
-                    : isDark 
-                      ? 'hover:bg-white/5 border-white/10 hover:border-green-500/20' 
-                      : 'hover:bg-neutral-50 border-neutral-200 hover:border-green-300'
-                }`}
+                className={`ml-auto text-xs font-mono px-3 py-1 border transition-all ${loading
+                  ? 'opacity-50 cursor-not-allowed'
+                  : isDark
+                    ? 'hover:bg-white/5 border-white/10 hover:border-green-500/20'
+                    : 'hover:bg-neutral-50 border-neutral-200 hover:border-green-300'
+                  }`}
               >
                 {loading ? 'REFRESHING...' : 'REFRESH'}
               </button>
             </div>
-            
+
             {loading && vaccines.length === 0 ? (
-              <div className={`relative p-16 border text-center ${
-                isDark ? 'bg-neutral-900/50 border-white/5' : 'bg-white border-neutral-300 shadow-sm'
-              }`}>
+              <div className={`relative p-16 border text-center ${isDark ? 'bg-neutral-900/50 border-white/5' : 'bg-white border-neutral-300 shadow-sm'
+                }`}>
                 <div className="animate-spin w-12 h-12 border-3 border-green-500 border-t-transparent rounded-full mx-auto mb-4"></div>
                 <h3 className={`${spaceGrotesk.className} text-2xl font-bold mb-2 uppercase tracking-tight`}>
                   Loading vaccines...
@@ -589,15 +570,13 @@ export default function VaccinesManagement() {
             ) : (
               <div className="grid grid-cols-1 gap-4">
                 {filteredVaccines.map((vaccine) => (
-                  <div key={vaccine.id || vaccine._id || Math.random()} className={`relative p-6 border transition-all duration-300 hover:-translate-y-1 ${
-                    isDark ? 'bg-neutral-900/50 border-white/5 hover:border-green-500/20' : 'bg-white border-neutral-300 hover:border-green-500/30 shadow-sm'
-                  }`}>
+                  <div key={vaccine.id || vaccine._id || Math.random()} className={`relative p-6 border transition-all duration-300 hover:-translate-y-1 ${isDark ? 'bg-neutral-900/50 border-white/5 hover:border-green-500/20' : 'bg-white border-neutral-300 hover:border-green-500/30 shadow-sm'
+                    }`}>
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
                       {/* Name & Species */}
                       <div className="md:col-span-3">
-                        <span className={`text-[9px] font-mono font-bold uppercase tracking-[0.25em] block mb-2 ${
-                          isDark ? 'text-neutral-500' : 'text-neutral-400'
-                        }`}>
+                        <span className={`text-[9px] font-mono font-bold uppercase tracking-[0.25em] block mb-2 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
+                          }`}>
                           Name / Species
                         </span>
                         <h3 className={`text-lg font-bold ${spaceGrotesk.className}`}>{vaccine.name}</h3>
@@ -608,9 +587,8 @@ export default function VaccinesManagement() {
 
                       {/* Disease / Purpose */}
                       <div className="md:col-span-2">
-                        <span className={`text-[9px] font-mono font-bold uppercase tracking-[0.25em] block mb-2 ${
-                          isDark ? 'text-neutral-500' : 'text-neutral-400'
-                        }`}>
+                        <span className={`text-[9px] font-mono font-bold uppercase tracking-[0.25em] block mb-2 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
+                          }`}>
                           Disease / Purpose
                         </span>
                         <p className={`text-sm font-medium ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}>
@@ -620,9 +598,8 @@ export default function VaccinesManagement() {
 
                       {/* Number Doses */}
                       <div className="md:col-span-2">
-                        <span className={`text-[9px] font-mono font-bold uppercase tracking-[0.25em] block mb-2 ${
-                          isDark ? 'text-neutral-500' : 'text-neutral-400'
-                        }`}>
+                        <span className={`text-[9px] font-mono font-bold uppercase tracking-[0.25em] block mb-2 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
+                          }`}>
                           Doses / Dosage
                         </span>
                         <p className={`text-sm font-bold ${isDark ? 'text-green-400' : 'text-green-600'}`}>
@@ -635,53 +612,48 @@ export default function VaccinesManagement() {
 
                       {/* Manufacturer */}
                       <div className="md:col-span-4">
-                        <span className={`text-[9px] font-mono font-bold uppercase tracking-[0.25em] block mb-2 ${
-                          isDark ? 'text-neutral-500' : 'text-neutral-400'
-                        }`}>
+                        <span className={`text-[9px] font-mono font-bold uppercase tracking-[0.25em] block mb-2 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
+                          }`}>
                           Manufacturer / Status
                         </span>
                         <p className={`text-sm font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
                           {vaccine.manufacturer || '-'}
                         </p>
-                        <span className={`inline-block mt-1 text-[9px] px-2 py-0.5 border font-bold uppercase tracking-widest ${
-                          vaccine.status === 'active' 
-                            ? 'text-green-400 border-green-500/20 bg-green-500/5' 
-                            : 'text-neutral-500 border-neutral-500/20 bg-neutral-500/5'
-                        }`}>
+                        <span className={`inline-block mt-1 text-[9px] px-2 py-0.5 border font-bold uppercase tracking-widest ${vaccine.status === 'active'
+                          ? 'text-green-400 border-green-500/20 bg-green-500/5'
+                          : 'text-neutral-500 border-neutral-500/20 bg-neutral-500/5'
+                          }`}>
                           {vaccine.status}
                         </span>
                       </div>
 
                       {/* Actions */}
                       <div className="md:col-span-1 flex items-center justify-end gap-1">
-                        <button 
-                          className={`cursor-pointer p-2.5 border transition-all ${
-                            isDark 
-                              ? 'hover:bg-white/10 border-white/10 hover:border-white/20' 
-                              : 'hover:bg-neutral-50 border-neutral-200 hover:border-neutral-300'
-                          }`} 
+                        <button
+                          className={`cursor-pointer p-2.5 border transition-all ${isDark
+                            ? 'hover:bg-white/10 border-white/10 hover:border-white/20'
+                            : 'hover:bg-neutral-50 border-neutral-200 hover:border-neutral-300'
+                            }`}
                           title="View"
                           onClick={() => setViewingVaccine(vaccine)}
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button 
-                          className={`cursor-pointer p-2.5 border transition-all ${
-                            isDark 
-                              ? 'hover:bg-white/10 border-white/10 hover:border-white/20' 
-                              : 'hover:bg-neutral-50 border-neutral-200 hover:border-neutral-300'
-                          }`} 
+                        <button
+                          className={`cursor-pointer p-2.5 border transition-all ${isDark
+                            ? 'hover:bg-white/10 border-white/10 hover:border-white/20'
+                            : 'hover:bg-neutral-50 border-neutral-200 hover:border-neutral-300'
+                            }`}
                           title="Edit"
                           onClick={() => handleOpenForm(vaccine)}
                         >
                           <Edit className="w-4 h-4" />
                         </button>
-                        <button 
-                          className={`cursor-pointer p-2.5 border transition-all ${
-                            isDark 
-                              ? 'hover:bg-red-500/20 text-red-400 border-white/10 hover:border-red-500/20' 
-                              : 'hover:bg-red-50 text-red-600 border-neutral-200 hover:border-red-200'
-                          }`} 
+                        <button
+                          className={`cursor-pointer p-2.5 border transition-all ${isDark
+                            ? 'hover:bg-red-500/20 text-red-400 border-white/10 hover:border-red-500/20'
+                            : 'hover:bg-red-50 text-red-600 border-neutral-200 hover:border-red-200'
+                            }`}
                           title="Delete"
                           onClick={() => setDeleteConfirm(vaccine)}
                         >
@@ -697,26 +669,24 @@ export default function VaccinesManagement() {
 
             {/* Empty State */}
             {!loading && filteredVaccines.length === 0 && (
-              <div className={`relative p-16 border text-center ${
-                isDark ? 'bg-neutral-900/50 border-white/5' : 'bg-white border-neutral-300 shadow-sm'
-              }`}>
+              <div className={`relative p-16 border text-center ${isDark ? 'bg-neutral-900/50 border-white/5' : 'bg-white border-neutral-300 shadow-sm'
+                }`}>
                 <Syringe className={`w-16 h-16 mx-auto mb-4 ${isDark ? 'text-neutral-800' : 'text-neutral-200'}`} />
                 <h3 className={`${spaceGrotesk.className} text-2xl font-bold mb-2 uppercase tracking-tight`}>
                   No vaccines found
                 </h3>
                 <p className={`text-sm font-medium ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>
-                  {searchTerm || selectedRotation !== 'all' 
-                    ? 'Try adjusting your search or filter criteria' 
+                  {searchTerm || selectedRotation !== 'all'
+                    ? 'Try adjusting your search or filter criteria'
                     : 'Click "Add Vaccine" to create your first record'}
                 </p>
                 {(searchTerm || selectedRotation !== 'all') && (
                   <button
                     onClick={handleClearSearch}
-                    className={`mt-4 px-4 py-2 border text-xs font-bold uppercase tracking-wider transition-all ${
-                      isDark 
-                        ? 'bg-neutral-800 hover:bg-neutral-700 border-white/10 hover:border-white/20' 
-                        : 'bg-white hover:bg-neutral-50 border-neutral-300 hover:border-neutral-400'
-                    }`}
+                    className={`mt-4 px-4 py-2 border text-xs font-bold uppercase tracking-wider transition-all ${isDark
+                      ? 'bg-neutral-800 hover:bg-neutral-700 border-white/10 hover:border-white/20'
+                      : 'bg-white hover:bg-neutral-50 border-neutral-300 hover:border-neutral-400'
+                      }`}
                   >
                     Clear Filters
                   </button>
@@ -730,20 +700,17 @@ export default function VaccinesManagement() {
       </div>
 
       {/* ADD/EDIT VACCINE FORM SIDEBAR */}
-      <div className={`fixed top-0 right-0 h-full w-full md:w-[500px] z-50 transform transition-transform duration-300 border-l ${
-        showVaccineForm ? 'translate-x-0' : 'translate-x-full'
-      } ${
-        isDark ? 'bg-neutral-950 border-white/10' : 'bg-white border-neutral-200'
-      } shadow-2xl overflow-y-auto`}>
+      <div className={`fixed top-0 right-0 h-full w-full md:w-[500px] z-50 transform transition-transform duration-300 border-l ${showVaccineForm ? 'translate-x-0' : 'translate-x-full'
+        } ${isDark ? 'bg-neutral-950 border-white/10' : 'bg-white border-neutral-200'
+        } shadow-2xl overflow-y-auto`}>
         <div className="p-8">
           {/* Header */}
           <div className={`flex items-center justify-between mb-8 pb-6 border-b ${isDark ? 'border-white/10' : 'border-neutral-200'}`}>
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <div className={`h-[2px] w-6 ${isDark ? 'bg-green-500' : 'bg-green-600'}`} />
-                <span className={`text-[9px] font-mono font-bold uppercase tracking-[0.3em] ${
-                  isDark ? 'text-green-400' : 'text-green-600'
-                }`}>
+                <span className={`text-[9px] font-mono font-bold uppercase tracking-[0.3em] ${isDark ? 'text-green-400' : 'text-green-600'
+                  }`}>
                   {editingVaccine ? 'EDIT_MODE' : 'CREATE_MODE'}
                 </span>
               </div>
@@ -756,11 +723,10 @@ export default function VaccinesManagement() {
             </div>
             <button
               onClick={handleCloseForm}
-              className={`cursor-pointer p-2.5 border transition-all ${
-                isDark 
-                  ? 'hover:bg-white/10 border-white/10 hover:border-white/20' 
-                  : 'hover:bg-neutral-50 border-neutral-200 hover:border-neutral-300'
-              }`}
+              className={`cursor-pointer p-2.5 border transition-all ${isDark
+                ? 'hover:bg-white/10 border-white/10 hover:border-white/20'
+                : 'hover:bg-neutral-50 border-neutral-200 hover:border-neutral-300'
+                }`}
               disabled={submitting}
             >
               <X className="w-5 h-5" />
@@ -771,63 +737,57 @@ export default function VaccinesManagement() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Vaccine Name */}
             <div>
-              <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
-                isDark ? 'text-neutral-500' : 'text-neutral-400'
-              }`}>
+              <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
+                }`}>
                 Vaccine Name *
               </label>
               <input
                 type="text"
                 required
                 value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Enter vaccine name"
-                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
-                  isDark 
-                    ? 'bg-neutral-900 border-white/10 focus:border-green-500 placeholder:text-neutral-600' 
-                    : 'bg-neutral-50 border-neutral-300 focus:border-green-500 placeholder:text-neutral-400'
-                }`}
+                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${isDark
+                  ? 'bg-neutral-900 border-white/10 focus:border-green-500 placeholder:text-neutral-600'
+                  : 'bg-neutral-50 border-neutral-300 focus:border-green-500 placeholder:text-neutral-400'
+                  }`}
                 disabled={submitting}
               />
             </div>
 
             {/* Disease / Purpose */}
             <div>
-              <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
-                isDark ? 'text-neutral-500' : 'text-neutral-400'
-              }`}>
+              <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
+                }`}>
                 Disease / Purpose *
               </label>
               <input
                 type="text"
                 required
                 value={formData.diseasePurpose}
-                onChange={(e) => setFormData({...formData, diseasePurpose: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, diseasePurpose: e.target.value })}
                 placeholder="Target disease or purpose"
-                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
-                  isDark 
-                    ? 'bg-neutral-900 border-white/10 focus:border-green-500 placeholder:text-neutral-600' 
-                    : 'bg-neutral-50 border-neutral-300 focus:border-green-500 placeholder:text-neutral-400'
-                }`}
+                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${isDark
+                  ? 'bg-neutral-900 border-white/10 focus:border-green-500 placeholder:text-neutral-600'
+                  : 'bg-neutral-50 border-neutral-300 focus:border-green-500 placeholder:text-neutral-400'
+                  }`}
                 disabled={submitting}
               />
             </div>
 
             {/* Applicable Species */}
             <div>
-              <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
-                isDark ? 'text-neutral-500' : 'text-neutral-400'
-              }`}>
+              <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
+                }`}>
                 Applicable Species *
               </label>
               <select
                 required
                 value={formData.applicableSpecies}
-                onChange={(e) => setFormData({...formData, applicableSpecies: e.target.value})}
-                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium appearance-none ${
-                    isDark 
-                      ? 'bg-neutral-900 border-white/10 focus:border-green-500 text-white' 
-                      : 'bg-neutral-50 border-neutral-300 focus:border-green-500 text-neutral-900'
+                onChange={(e) => setFormData({ ...formData, applicableSpecies: e.target.value })}
+                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium appearance-none ${isDark
+                  ? 'bg-neutral-900 border-white/10 focus:border-green-500 text-white'
+                  : 'bg-neutral-50 border-neutral-300 focus:border-green-500 text-neutral-900'
                   }`}
                 disabled={submitting}
               >
@@ -841,29 +801,26 @@ export default function VaccinesManagement() {
             {/* Dosage & Number of Doses */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
-                  isDark ? 'text-neutral-500' : 'text-neutral-400'
-                }`}>
+                <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
+                  }`}>
                   Dosage *
                 </label>
                 <input
                   type="text"
                   required
                   value={formData.dosage}
-                  onChange={(e) => setFormData({...formData, dosage: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, dosage: e.target.value })}
                   placeholder="e.g. 2ml"
-                  className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
-                    isDark 
-                      ? 'bg-neutral-900 border-white/10 focus:border-green-500 text-white' 
-                      : 'bg-neutral-50 border-neutral-300 focus:border-green-500 text-neutral-900'
-                  }`}
+                  className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${isDark
+                    ? 'bg-neutral-900 border-white/10 focus:border-green-500 text-white'
+                    : 'bg-neutral-50 border-neutral-300 focus:border-green-500 text-neutral-900'
+                    }`}
                   disabled={submitting}
                 />
               </div>
               <div>
-                <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
-                  isDark ? 'text-neutral-500' : 'text-neutral-400'
-                }`}>
+                <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
+                  }`}>
                   No. of Doses *
                 </label>
                 <input
@@ -871,13 +828,12 @@ export default function VaccinesManagement() {
                   required
                   min="1"
                   value={formData.numberDoses}
-                  onChange={(e) => setFormData({...formData, numberDoses: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, numberDoses: e.target.value })}
                   placeholder="Rotation"
-                  className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
-                    isDark 
-                      ? 'bg-neutral-900 border-white/10 focus:border-green-500 text-white' 
-                      : 'bg-neutral-50 border-neutral-300 focus:border-green-500 text-neutral-900'
-                  }`}
+                  className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${isDark
+                    ? 'bg-neutral-900 border-white/10 focus:border-green-500 text-white'
+                    : 'bg-neutral-50 border-neutral-300 focus:border-green-500 text-neutral-900'
+                    }`}
                   disabled={submitting}
                 />
               </div>
@@ -886,41 +842,37 @@ export default function VaccinesManagement() {
             {/* Dose Interval & First Dose Age */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
-                  isDark ? 'text-neutral-500' : 'text-neutral-400'
-                }`}>
+                <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
+                  }`}>
                   Dose Interval *
                 </label>
                 <input
                   type="text"
                   required
                   value={formData.doseInterval}
-                  onChange={(e) => setFormData({...formData, doseInterval: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, doseInterval: e.target.value })}
                   placeholder="e.g. 21 days"
-                  className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
-                    isDark 
-                      ? 'bg-neutral-900 border-white/10 focus:border-green-500 text-white' 
-                      : 'bg-neutral-50 border-neutral-300 focus:border-green-500 text-neutral-900'
-                  }`}
+                  className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${isDark
+                    ? 'bg-neutral-900 border-white/10 focus:border-green-500 text-white'
+                    : 'bg-neutral-50 border-neutral-300 focus:border-green-500 text-neutral-900'
+                    }`}
                   disabled={submitting}
                 />
               </div>
               <div>
-                <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
-                  isDark ? 'text-neutral-500' : 'text-neutral-400'
-                }`}>
+                <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
+                  }`}>
                   First Dose Age
                 </label>
                 <input
                   type="text"
                   value={formData.firstDoseAge}
-                  onChange={(e) => setFormData({...formData, firstDoseAge: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, firstDoseAge: e.target.value })}
                   placeholder="e.g. 3 months"
-                  className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
-                    isDark 
-                      ? 'bg-neutral-900 border-white/10 focus:border-green-500 text-white' 
-                      : 'bg-neutral-50 border-neutral-300 focus:border-green-500 text-neutral-900'
-                  }`}
+                  className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${isDark
+                    ? 'bg-neutral-900 border-white/10 focus:border-green-500 text-white'
+                    : 'bg-neutral-50 border-neutral-300 focus:border-green-500 text-neutral-900'
+                    }`}
                   disabled={submitting}
                 />
               </div>
@@ -929,38 +881,34 @@ export default function VaccinesManagement() {
             {/* Manufacturer & Status */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
-                  isDark ? 'text-neutral-500' : 'text-neutral-400'
-                }`}>
+                <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
+                  }`}>
                   Manufacturer
                 </label>
                 <input
                   type="text"
                   value={formData.manufacturer}
-                  onChange={(e) => setFormData({...formData, manufacturer: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
                   placeholder="Pharma name"
-                  className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
-                    isDark 
-                      ? 'bg-neutral-900 border-white/10 focus:border-green-500 text-white' 
-                      : 'bg-neutral-50 border-neutral-300 focus:border-green-500 text-neutral-900'
-                  }`}
+                  className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${isDark
+                    ? 'bg-neutral-900 border-white/10 focus:border-green-500 text-white'
+                    : 'bg-neutral-50 border-neutral-300 focus:border-green-500 text-neutral-900'
+                    }`}
                   disabled={submitting}
                 />
               </div>
               <div>
-                <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
-                  isDark ? 'text-neutral-500' : 'text-neutral-400'
-                }`}>
+                <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
+                  }`}>
                   Status
                 </label>
                 <select
                   value={formData.status}
-                  onChange={(e) => setFormData({...formData, status: e.target.value})}
-                  className={`w-full px-4 py-3.5 border outline-none transition-all font-medium appearance-none ${
-                    isDark 
-                      ? 'bg-neutral-900 border-white/10 focus:border-green-500 text-white' 
-                      : 'bg-neutral-50 border-neutral-300 focus:border-green-500 text-neutral-900'
-                  }`}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  className={`w-full px-4 py-3.5 border outline-none transition-all font-medium appearance-none ${isDark
+                    ? 'bg-neutral-900 border-white/10 focus:border-green-500 text-white'
+                    : 'bg-neutral-50 border-neutral-300 focus:border-green-500 text-neutral-900'
+                    }`}
                   disabled={submitting}
                 >
                   <option value="active">Active</option>
@@ -971,21 +919,19 @@ export default function VaccinesManagement() {
 
             {/* Description */}
             <div>
-              <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
-                isDark ? 'text-neutral-500' : 'text-neutral-400'
-              }`}>
+              <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
+                }`}>
                 Description
               </label>
               <textarea
                 rows={3}
                 value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Enter vaccine description"
-                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium resize-none ${
-                  isDark 
-                    ? 'bg-neutral-900 border-white/10 focus:border-green-500 placeholder:text-neutral-600' 
-                    : 'bg-neutral-50 border-neutral-300 focus:border-green-500 placeholder:text-neutral-400'
-                }`}
+                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium resize-none ${isDark
+                  ? 'bg-neutral-900 border-white/10 focus:border-green-500 placeholder:text-neutral-600'
+                  : 'bg-neutral-50 border-neutral-300 focus:border-green-500 placeholder:text-neutral-400'
+                  }`}
                 disabled={submitting}
               />
             </div>
@@ -995,11 +941,10 @@ export default function VaccinesManagement() {
               <button
                 type="button"
                 onClick={handleCloseForm}
-                className={`cursor-pointer flex-1 px-6 py-3.5 border font-bold text-[11px] uppercase tracking-widest transition-all ${
-                  isDark 
-                    ? 'bg-neutral-800 hover:bg-neutral-700 border-neutral-700' 
-                    : 'bg-white hover:bg-neutral-50 border-neutral-300'
-                }`}
+                className={`cursor-pointer flex-1 px-6 py-3.5 border font-bold text-[11px] uppercase tracking-widest transition-all ${isDark
+                  ? 'bg-neutral-800 hover:bg-neutral-700 border-neutral-700'
+                  : 'bg-white hover:bg-neutral-50 border-neutral-300'
+                  }`}
                 disabled={submitting}
               >
                 Cancel
@@ -1007,11 +952,10 @@ export default function VaccinesManagement() {
               <button
                 type="submit"
                 disabled={submitting}
-                className={`cursor-pointer flex-1 px-6 py-3.5 border font-bold text-[11px] uppercase tracking-widest transition-all ${
-                  submitting
-                    ? 'bg-green-400 cursor-not-allowed'
-                    : 'bg-green-600 hover:bg-green-700'
-                } text-white border-green-600`}
+                className={`cursor-pointer flex-1 px-6 py-3.5 border font-bold text-[11px] uppercase tracking-widest transition-all ${submitting
+                  ? 'bg-green-400 cursor-not-allowed'
+                  : 'bg-green-600 hover:bg-green-700'
+                  } text-white border-green-600`}
               >
                 {submitting ? 'Saving...' : editingVaccine ? 'Update' : 'Add'}
               </button>
@@ -1023,13 +967,11 @@ export default function VaccinesManagement() {
       {/* DELETE CONFIRMATION MODAL */}
       {deleteConfirm && (
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-          <div className={`relative max-w-md w-full p-8 border ${
-            isDark ? 'bg-neutral-900 border-white/10' : 'bg-white border-neutral-300'
-          } shadow-2xl`}>
+          <div className={`relative max-w-md w-full p-8 border ${isDark ? 'bg-neutral-900 border-white/10' : 'bg-white border-neutral-300'
+            } shadow-2xl`}>
             <div className="text-center">
-              <div className={`inline-flex p-5 border mb-5 ${
-                isDark ? 'bg-red-500/10 border-red-500/20' : 'bg-red-50 border-red-200'
-              }`}>
+              <div className={`inline-flex p-5 border mb-5 ${isDark ? 'bg-red-500/10 border-red-500/20' : 'bg-red-50 border-red-200'
+                }`}>
                 <Trash2 className={`w-10 h-10 ${isDark ? 'text-red-400' : 'text-red-600'}`} />
               </div>
               <h3 className={`${spaceGrotesk.className} text-2xl font-bold uppercase tracking-tight mb-3`}>
@@ -1041,11 +983,10 @@ export default function VaccinesManagement() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setDeleteConfirm(null)}
-                  className={`cursor-pointer flex-1 px-6 py-3.5 border font-bold text-[11px] uppercase tracking-widest transition-all ${
-                    isDark 
-                      ? 'bg-neutral-800 hover:bg-neutral-700 border-neutral-700' 
-                      : 'bg-white hover:bg-neutral-50 border-neutral-300'
-                  }`}
+                  className={`cursor-pointer flex-1 px-6 py-3.5 border font-bold text-[11px] uppercase tracking-widest transition-all ${isDark
+                    ? 'bg-neutral-800 hover:bg-neutral-700 border-neutral-700'
+                    : 'bg-white hover:bg-neutral-50 border-neutral-300'
+                    }`}
                 >
                   Cancel
                 </button>
@@ -1065,18 +1006,16 @@ export default function VaccinesManagement() {
       {/* VIEW VACCINE MODAL */}
       {viewingVaccine && (
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-          <div className={`relative max-w-2xl w-full p-8 border ${
-            isDark ? 'bg-neutral-900 border-white/10' : 'bg-white border-neutral-300'
-          } shadow-2xl`}>
+          <div className={`relative max-w-2xl w-full p-8 border ${isDark ? 'bg-neutral-900 border-white/10' : 'bg-white border-neutral-300'
+            } shadow-2xl`}>
             <div>
               {/* Header */}
               <div className={`flex items-center justify-between mb-8 pb-6 border-b ${isDark ? 'border-white/10' : 'border-neutral-200'}`}>
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <div className={`h-[2px] w-6 ${isDark ? 'bg-green-500' : 'bg-green-600'}`} />
-                    <span className={`text-[9px] font-mono font-bold uppercase tracking-[0.3em] ${
-                      isDark ? 'text-green-400' : 'text-green-600'
-                    }`}>
+                    <span className={`text-[9px] font-mono font-bold uppercase tracking-[0.3em] ${isDark ? 'text-green-400' : 'text-green-600'
+                      }`}>
                       VACCINE_PROFILE
                     </span>
                   </div>
@@ -1089,11 +1028,10 @@ export default function VaccinesManagement() {
                 </div>
                 <button
                   onClick={() => setViewingVaccine(null)}
-                  className={`cursor-pointer p-2.5 border transition-all ${
-                    isDark 
-                      ? 'hover:bg-white/10 border-white/10 hover:border-white/20' 
-                      : 'hover:bg-neutral-50 border-neutral-200 hover:border-neutral-300'
-                  }`}
+                  className={`cursor-pointer p-2.5 border transition-all ${isDark
+                    ? 'hover:bg-white/10 border-white/10 hover:border-white/20'
+                    : 'hover:bg-neutral-50 border-neutral-200 hover:border-neutral-300'
+                    }`}
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1102,40 +1040,35 @@ export default function VaccinesManagement() {
               {/* Details Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div>
-                  <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${
-                    isDark ? 'text-neutral-500' : 'text-neutral-400'
-                  }`}>
+                  <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
+                    }`}>
                     Vaccine Name
                   </label>
                   <p className={`text-lg font-bold ${spaceGrotesk.className}`}>{viewingVaccine.name}</p>
                 </div>
 
                 <div>
-                  <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${
-                    isDark ? 'text-neutral-500' : 'text-neutral-400'
-                  }`}>
+                  <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
+                    }`}>
                     Rotation (Doses)
                   </label>
-                  <p className={`${spaceGrotesk.className} text-2xl font-bold ${
-                    isDark ? 'text-green-400' : 'text-green-600'
-                  }`}>
+                  <p className={`${spaceGrotesk.className} text-2xl font-bold ${isDark ? 'text-green-400' : 'text-green-600'
+                    }`}>
                     {viewingVaccine.rotation}
                   </p>
                 </div>
 
                 <div>
-                  <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${
-                    isDark ? 'text-neutral-500' : 'text-neutral-400'
-                  }`}>
+                  <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
+                    }`}>
                     Interval
                   </label>
                   <p className="text-sm font-medium">{viewingVaccine.interval}</p>
                 </div>
 
                 <div>
-                  <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${
-                    isDark ? 'text-neutral-500' : 'text-neutral-400'
-                  }`}>
+                  <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
+                    }`}>
                     Added Date
                   </label>
                   <p className="text-sm font-medium">
@@ -1144,9 +1077,8 @@ export default function VaccinesManagement() {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${
-                    isDark ? 'text-neutral-500' : 'text-neutral-400'
-                  }`}>
+                  <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
+                    }`}>
                     Description
                   </label>
                   <p className="text-sm font-medium">{viewingVaccine.description}</p>
@@ -1157,11 +1089,10 @@ export default function VaccinesManagement() {
               <div className={`flex gap-3 pt-4 border-t ${isDark ? 'border-white/10' : 'border-neutral-200'}`}>
                 <button
                   onClick={() => setViewingVaccine(null)}
-                  className={`cursor-pointer flex-1 px-6 py-3.5 border font-bold text-[11px] uppercase tracking-widest transition-all ${
-                    isDark 
-                      ? 'bg-neutral-800 hover:bg-neutral-700 border-neutral-700' 
-                      : 'bg-white hover:bg-neutral-50 border-neutral-300'
-                  }`}
+                  className={`cursor-pointer flex-1 px-6 py-3.5 border font-bold text-[11px] uppercase tracking-widest transition-all ${isDark
+                    ? 'bg-neutral-800 hover:bg-neutral-700 border-neutral-700'
+                    : 'bg-white hover:bg-neutral-50 border-neutral-300'
+                    }`}
                 >
                   Close
                 </button>
