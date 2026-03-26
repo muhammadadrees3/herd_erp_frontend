@@ -181,11 +181,11 @@ export default function Navbar({
           children: [
             { name: 'Sales Overview', route: '/dashboard/milk-management/sales-overview' },
             { name: 'Production', route: '/dashboard/milk-management/production/dashboard' },
-            { name: 'Daily Records', route: '/dashboard/milk-management/production/daily-records' },
-            { name: 'Analytics', route: '/dashboard/milk-management/production/analytics' },
+            // { name: 'Daily Records', route: '/dashboard/milk-management/production/daily-records' },
+            // { name: 'Analytics', route: '/dashboard/milk-management/production/analytics' },
             { name: 'Sales', route: '/dashboard/milk-management/sales/dashboard' },
-            { name: 'Sales Records', route: '/dashboard/milk-management/sales/records' },
-            { name: 'Usage', route: '/dashboard/milk-management/sales/usage' },
+            // { name: 'Sales Records', route: '/dashboard/milk-management/sales/records' },
+            // { name: 'Usage', route: '/dashboard/milk-management/sales/usage' },
             { name: 'OTCS Dashboard', route: '/dashboard/milk-management/otcs/dashboard' },
             { name: 'OTCS Records', route: '/dashboard/milk-management/otcs/records' }
           ]

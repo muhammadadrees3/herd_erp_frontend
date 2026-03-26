@@ -16,9 +16,9 @@ const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], weight: ["300", "500", 
 const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 
 const TABS = [
-  { label: 'Dashboard',     icon: BarChart3,  path: '/milk-management/sales/dashboard' },
-  { label: 'Sales Records', icon: FileText,   path: '/milk-management/sales/records'   },
-  { label: 'Usage',         icon: TrendingUp, path: '/milk-management/sales/usage'     },
+  { label: 'Dashboard',     icon: BarChart3,  path: '/dashboard/milk-management/sales/dashboard' },
+  { label: 'Sales Records', icon: FileText,   path: '/dashboard/milk-management/sales/records'   },
+  { label: 'Usage',         icon: TrendingUp, path: '/dashboard/milk-management/sales/usage'     },
 ];
 
 const TIME_OPTS    = ['All', 'Morning', 'Afternoon', 'Evening'];

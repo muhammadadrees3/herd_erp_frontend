@@ -378,9 +378,9 @@ export default function DailyProductionRecords() {
               isDark ? 'bg-neutral-900/50 border-white/10' : 'bg-white border-neutral-300 shadow-sm'
             }`}>
               <Link 
-                href="/milk-management/production/dashboard"
+                href="/dashboard/milk-management/production/dashboard"
                 className={`cursor-pointer flex items-center gap-2 px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
-                  isActive('/milk-management/production/dashboard')
+                  isActive('/dashboard/milk-management/production/dashboard')
                     ? isDark
                       ? 'bg-green-500/10 text-green-400 border border-green-500/20' 
                       : 'bg-green-500/10 text-green-700 border border-green-500/30'
@@ -393,9 +393,9 @@ export default function DailyProductionRecords() {
                 Dashboard
               </Link>
               <Link 
-                href="/milk-management/production/daily-records"
+                href="/dashboard/milk-management/production/daily-records"
                 className={`cursor-pointer flex items-center gap-2 px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
-                  isActive('/milk-management/production/daily-records')
+                  isActive('/dashboard/milk-management/production/daily-records')
                     ? isDark
                       ? 'bg-green-500/10 text-green-400 border border-green-500/20' 
                       : 'bg-green-500/10 text-green-700 border border-green-500/30'
@@ -408,9 +408,9 @@ export default function DailyProductionRecords() {
                 Daily Records
               </Link>
               <Link 
-                href="/milk-management/production/analytics"
+                href="/dashboard/milk-management/production/analytics"
                 className={`cursor-pointer flex items-center gap-2 px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
-                  isActive('/milk-management/production/analytics')
+                  isActive('/dashboard/milk-management/production/analytics')
                     ? isDark
                       ? 'bg-green-500/10 text-green-400 border border-green-500/20' 
                       : 'bg-green-500/10 text-green-700 border border-green-500/30'
