@@ -303,7 +303,7 @@ export default function DryOffManagement() {
   // Helper function to get display fields from record
   const getDisplayRecord = (record) => {
     return {
-      animalId: record.animalId || '',
+      animalId: record.animalTagId || record.animalId || '',
       animalName: record.animalName || '',
       breed: record.breed || '',
       expectedCalving: record.expectedCalvingDate || record.expectedCalving || '',

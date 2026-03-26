@@ -1,36 +1,45 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import Navbar from '@/components/dashboard/Navbar';
-import animalService from '@/services/animalService';
-import speciesService from '@/services/speciesService';
-import breedService from '@/services/breedService';
+import React, { useState, useEffect } from "react";
+import Navbar from "@/components/dashboard/Navbar";
+import animalService from "@/services/animalService";
+import speciesService from "@/services/speciesService";
+import breedService from "@/services/breedService";
 import {
-  Search, Filter, Plus, Eye, Edit, Trash2, ChevronDown, X, Download,
-  Activity, AlertCircle, FileText
-} from 'lucide-react';
+  Search,
+  Filter,
+  Plus,
+  Eye,
+  Edit,
+  Trash2,
+  ChevronDown,
+  X,
+  Download,
+  Activity,
+  AlertCircle,
+  FileText,
+} from "lucide-react";
 import { Space_Grotesk, Inter } from "next/font/google";
-import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useTheme } from "@/context/ThemeContext";
 
-import { useTheme } from '@/context/ThemeContext';
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], weight: ["300", "500", "700"] });
 const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
-
 const serif = "var(--font-display)";
 
 export default function AnimalsManagement() {
   const { isDark } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [filterTypeOpen, setFilterTypeOpen] = useState(false);
   const [filterSpeciesOpen, setFilterSpeciesOpen] = useState(false);
   const [filterHealthOpen, setFilterHealthOpen] = useState(false);
   const [filterStatusOpen, setFilterStatusOpen] = useState(false);
-  const [selectedType, setSelectedType] = useState('all');
-  const [selectedSpecies, setSelectedSpecies] = useState('all');
-  const [selectedHealth, setSelectedHealth] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedType, setSelectedType] = useState("all");
+  const [selectedSpecies, setSelectedSpecies] = useState("all");
+  const [selectedHealth, setSelectedHealth] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
   const [showAnimalForm, setShowAnimalForm] = useState(false);
   const [editingAnimal, setEditingAnimal] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -39,18 +48,18 @@ export default function AnimalsManagement() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
-    dateOfBirth: '',
-    animalType: 'Cow',
-    gender: 'Female',
-    status: 'Active',
-    healthStatus: 'Healthy',
-    breedId: '',
-    breed: '',
-    motherId: '',
-    fatherId: '',
-    shedId: '',
-    shedName: '',
-    registrationDate: new Date().toISOString().split('T')[0]
+    dateOfBirth: "",
+    animalType: "Cow",
+    gender: "Female",
+    status: "Active",
+    healthStatus: "Healthy",
+    breedId: "",
+    breed: "",
+    motherId: "",
+    fatherId: "",
+    shedId: "",
+    shedName: "",
+    registrationDate: new Date().toISOString().split("T")[0],
   });
 
   const [breeds, setBreeds] = useState([]);
@@ -59,175 +68,115 @@ export default function AnimalsManagement() {
   const [formError, setFormError] = useState(null);
   const [shedCapacityMap, setShedCapacityMap] = useState({}); // { shedId: { capacity, currentCount } }
 
+  const [animals, setAnimals] = useState([]);
+
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // --- ANIMALS DATA ---
-  const [animals, setAnimals] = useState([]);
+  // Helper: Normalize animal data from API
+  const normalizeAnimal = (animal) => ({
+    id: animal.id,
+    dateOfBirth: animal.dob || animal.dateOfBirth || "",
+    animalType: animal.animalType || "Cow",
+    gender: animal.gender || "Female",
+    status: animal.status || "Active",
+    healthStatus: animal.healthStatus || "Healthy",
+    breedId: animal.breedId || animal.Breed?.id || "",
+    breed: animal.breed || animal.Breed?.name || "",
+    motherId: animal.motherId || animal.Mother?.id || "",
+    motherTagId: animal.Mother?.animalTagId || "",
+    fatherId: animal.fatherId || animal.Father?.id || "",
+    fatherTagId: animal.Father?.animalTagId || "",
+    animalTagId: animal.animalTagId || animal.animal_tag_id || "",
+    shedId: animal.Shed?.id || animal.shedId || animal.shed_id || "",
+    shedName: animal.Shed?.shedName || animal.shedName || "",
+    registrationDate:
+      animal.registrationDate ||
+      (animal.createdAt ? new Date(animal.createdAt).toISOString().split("T")[0] : ""),
+  });
 
-  // ...existing code...
-
-  // Normalize animal to handle different field names
-  const normalizeAnimal = (animal) => {
-    return {
-      id: animal.id,
-      dateOfBirth: animal.dob || animal.dateOfBirth || '',
-      animalType: animal.animalType || 'Cow',
-      gender: animal.gender || 'Female',
-      status: animal.status || 'Active',
-      healthStatus: animal.healthStatus || 'Healthy',
-      breedId: animal.breedId || animal.Breed?.id || '',
-      breed: animal.breed || animal.Breed?.name || '',
-      motherId: animal.motherId || animal.Mother?.id || '',
-      motherTagId: animal.Mother?.animalTagId || '',
-      fatherId: animal.fatherId || animal.Father?.id || '',
-      fatherTagId: animal.Father?.animalTagId || '',
-      animalTagId: animal.animalTagId || animal.animal_tag_id || '',
-      shedId: animal.Shed?.id || animal.shedId || animal.shed_id || '',
-      shedName: animal.Shed?.shedName || animal.shedName || '',
-      registrationDate: animal.registrationDate || (animal.createdAt ? new Date(animal.createdAt).toISOString().split('T')[0] : '')
-    };
-  };
-  // Format date to human readable
+  // Format date
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return "N/A";
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return dateString;
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
       });
-    } catch (e) {
+    } catch {
       return dateString;
     }
   };
 
-  // Fetch Animals from API
+  // Fetch animals from API
   const fetchAnimals = async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await animalService.getAnimals();
+      let fetchedAnimals = [];
       if (data && data.success) {
-        const fetchedAnimals = (data.data || []).map(normalizeAnimal);
-        setAnimals(fetchedAnimals);
-        localStorage.setItem('livestockAnimals', JSON.stringify(fetchedAnimals));
+        fetchedAnimals = (data.data || []).map(normalizeAnimal);
       } else if (Array.isArray(data)) {
-        const fetchedAnimals = data.map(normalizeAnimal);
-        setAnimals(fetchedAnimals);
-        localStorage.setItem('livestockAnimals', JSON.stringify(fetchedAnimals));
+        fetchedAnimals = data.map(normalizeAnimal);
       } else {
         console.warn("Unexpected API response format:", data);
-        loadFromLocalStorage();
+        fetchedAnimals = loadFromLocalStorage();
       }
-    } catch (error) {
-      console.error("❌ Error fetching animals:", error);
-      setError('Failed to fetch animals');
-      loadFromLocalStorage();
+      setAnimals(fetchedAnimals);
+      localStorage.setItem("livestockAnimals", JSON.stringify(fetchedAnimals));
+    } catch (err) {
+      console.error("Error fetching animals:", err);
+      setError("Failed to fetch animals. Using local data.");
+      const local = loadFromLocalStorage();
+      setAnimals(local);
     } finally {
       setLoading(false);
     }
   };
 
-  // Load from localStorage as fallback
+  // Load from localStorage
   const loadFromLocalStorage = () => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('livestockAnimals');
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("livestockAnimals");
       if (stored) {
         try {
-          const parsed = JSON.parse(stored);
-          setAnimals(parsed);
-        } catch (e) {
-          console.error('Error parsing stored animals:', e);
-          setAnimals([]);
+          return JSON.parse(stored);
+        } catch {
+          return [];
         }
-      } else {
-        setAnimals([]);
       }
     }
+    return [];
   };
 
-  // Initial data fetch
-  useEffect(() => {
-    fetchAnimals();
-    fetchShedsList();
-    fetchTaxonomy();
-  }, []);
-
-  // Handle URL Query Params
-  useEffect(() => {
-    const addAnimal = searchParams.get('addAnimal');
-    const shedId = searchParams.get('shedId');
-    const shedName = searchParams.get('shedName');
-
-    if (addAnimal === 'true') {
-      setShowAnimalForm(true);
-      if (shedId || shedName) {
-        setFormData(prev => ({
-          ...prev,
-          shedId: shedId || prev.shedId,
-          shedName: shedName ? decodeURIComponent(shedName) : prev.shedName
-        }));
-      }
-    }
-  }, [searchParams]);
-
-
-  // Save to localStorage whenever animals change (backup)
-  useEffect(() => {
-    if (animals.length > 0 && typeof window !== 'undefined') {
-      localStorage.setItem('livestockAnimals', JSON.stringify(animals));
-    }
-  }, [animals]);
-
-  const filteredAnimals = animals.filter(animal => {
-    const searchLower = searchTerm.toLowerCase();
-    const animalIdStr = animal.id ? animal.id.toString() : '';
-    const matchesSearch = 
-      (animal.breed || '').toLowerCase().includes(searchLower) ||
-      animalIdStr.includes(searchLower) ||
-      (animal.shedName || '').toLowerCase().includes(searchLower) ||
-      (animal.animalType || '').toLowerCase().includes(searchLower);
-
-    const matchesType = selectedType === 'all' || animal.animalType === selectedType;
-    const matchesSpecies = selectedSpecies === 'all' || animal.animalType === selectedSpecies;
-    const matchesHealth = selectedHealth === 'all' || animal.healthStatus === selectedHealth;
-    const matchesStatus = selectedStatus === 'all' || animal.status === selectedStatus;
-    
-    return matchesSearch && matchesType && matchesSpecies && matchesHealth && matchesStatus;
-  });
-
-  // Fetch Sheds for dropdown
+  // Fetch sheds list
   const fetchShedsList = async () => {
     try {
       const data = await animalService.getSheds();
       if (data && data.success) {
         setSheds(data.data || []);
+      } else if (Array.isArray(data)) {
+        setSheds(data);
+      } else {
+        setSheds([]);
       }
     } catch (err) {
       console.error("Error fetching sheds:", err);
+      setSheds([]);
     }
   };
 
-  // Build capacity map from animals list
-  useEffect(() => {
-    const map = {};
-    sheds.forEach(shed => {
-      const count = animals.filter(a => String(a.shedId) === String(shed.id)).length;
-      map[shed.id] = { capacity: shed.capacity, currentCount: count };
-    });
-    setShedCapacityMap(map);
-  }, [animals, sheds]);
-
-  // Fetch Taxonomy from API
+  // Fetch taxonomy (species & breeds)
   const fetchTaxonomy = async () => {
     try {
       const spResp = await speciesService.getSpecies();
       const brResp = await breedService.getBreeds();
-      
+
       const speciesList = spResp?.data || (Array.isArray(spResp) ? spResp : []);
       const breedsList = brResp?.data || (Array.isArray(brResp) ? brResp : []);
 
@@ -235,48 +184,108 @@ export default function AnimalsManagement() {
       setBreeds(breedsList);
     } catch (err) {
       console.error("Error fetching taxonomy:", err);
+      setSpecies([]);
+      setBreeds([]);
     }
   };
 
+  // Build capacity map
+  useEffect(() => {
+    const map = {};
+    sheds.forEach((shed) => {
+      const count = animals.filter((a) => String(a.shedId) === String(shed.id)).length;
+      map[shed.id] = { capacity: shed.capacity, currentCount: count };
+    });
+    setShedCapacityMap(map);
+  }, [animals, sheds]);
 
-  // Handle Add/Edit Animal
+  // Initial data load
+  useEffect(() => {
+    fetchAnimals();
+    fetchShedsList();
+    fetchTaxonomy();
+  }, []);
+
+  // Handle URL params for "addAnimal"
+  useEffect(() => {
+    const addAnimal = searchParams.get("addAnimal");
+    const shedId = searchParams.get("shedId");
+    const shedName = searchParams.get("shedName");
+
+    if (addAnimal === "true") {
+      setShowAnimalForm(true);
+      if (shedId || shedName) {
+        setFormData((prev) => ({
+          ...prev,
+          shedId: shedId || prev.shedId,
+          shedName: shedName ? decodeURIComponent(shedName) : prev.shedName,
+        }));
+      }
+    }
+  }, [searchParams]);
+
+  // Filter animals
+  const filteredAnimals = animals.filter((animal) => {
+    const searchLower = searchTerm.toLowerCase();
+    const animalIdStr = animal.id ? animal.id.toString() : "";
+    const matchesSearch =
+      (animal.breed || "").toLowerCase().includes(searchLower) ||
+      animalIdStr.includes(searchLower) ||
+      (animal.shedName || "").toLowerCase().includes(searchLower) ||
+      (animal.animalType || "").toLowerCase().includes(searchLower);
+
+    const matchesType = selectedType === "all" || animal.animalType === selectedType;
+    const matchesSpecies = selectedSpecies === "all" || animal.animalType === selectedSpecies;
+    const matchesHealth = selectedHealth === "all" || animal.healthStatus === selectedHealth;
+    const matchesStatus = selectedStatus === "all" || animal.status === selectedStatus;
+
+    return matchesSearch && matchesType && matchesSpecies && matchesHealth && matchesStatus;
+  });
+
+  // Open form for add/edit
   const handleOpenForm = (animal = null) => {
     if (animal) {
       setEditingAnimal(animal);
       setFormData({
-        dateOfBirth: animal.dateOfBirth || '',
-        animalType: animal.animalType || 'Cow',
-        gender: animal.gender || 'Female',
-        status: animal.status || 'Active',
-        healthStatus: animal.healthStatus || 'Healthy',
-        breedId: animal.breedId || '',
-        breed: animal.breed || '',
-        motherId: animal.motherId || '',
-        fatherId: animal.fatherId || '',
-        shedId: animal.shedId || '',
-        shedName: animal.shedName || '',
-        registrationDate: animal.registrationDate || (animal.createdAt ? new Date(animal.createdAt).toISOString().split('T')[0] : '')
+        dateOfBirth: animal.dateOfBirth || "",
+        animalType: animal.animalType || "Cow",
+        gender: animal.gender || "Female",
+        status: animal.status || "Active",
+        healthStatus: animal.healthStatus || "Healthy",
+        breedId: animal.breedId || "",
+        breed: animal.breed || "",
+        motherId: animal.motherId || "",
+        fatherId: animal.fatherId || "",
+        shedId: animal.shedId || "",
+        shedName: animal.shedName || "",
+        registrationDate:
+          animal.registrationDate ||
+          (animal.createdAt ? new Date(animal.createdAt).toISOString().split("T")[0] : ""),
       });
     } else {
       setEditingAnimal(null);
-      const firstSpecies = (species && species.length > 0) ? (species[0].name || species[0]) : 'Cow';
-      const availableBreeds = (breeds && breeds.length > 0) ? breeds.filter(b => (b.species || b.animalType) === firstSpecies) : [];
-      const firstBreed = availableBreeds.length > 0 ? (availableBreeds[0].name || availableBreeds[0]) : (species && species.length > 0 ? '' : 'Unknown');
-      const firstBreedId = availableBreeds.length > 0 ? (availableBreeds[0].id || '') : '';
+      const firstSpecies = species.length > 0 ? species[0].name || species[0] : "Cow";
+      const availableBreeds = breeds.filter(
+        (b) => (b.species || b.animalType) === firstSpecies
+      );
+      const firstBreed = availableBreeds.length > 0 ? availableBreeds[0].name || availableBreeds[0] : "";
+      const firstBreedId = availableBreeds.length > 0 ? availableBreeds[0].id || "" : "";
 
       setFormData({
-        dateOfBirth: '',
+        dateOfBirth: "",
         animalType: firstSpecies,
-        gender: 'Female',
-        status: 'Active',
-        healthStatus: 'Healthy',
+        gender: "Female",
+        status: "Active",
+        healthStatus: "Healthy",
         breedId: firstBreedId,
         breed: firstBreed,
-        motherId: '',
-        fatherId: '',
-        shedId: searchParams.get('shedId') || '',
-        shedName: searchParams.get('shedName') ? decodeURIComponent(searchParams.get('shedName')) : '',
-        registrationDate: new Date().toISOString().split('T')[0]
+        motherId: "",
+        fatherId: "",
+        shedId: searchParams.get("shedId") || "",
+        shedName: searchParams.get("shedName")
+          ? decodeURIComponent(searchParams.get("shedName"))
+          : "",
+        registrationDate: new Date().toISOString().split("T")[0],
       });
     }
     setShowAnimalForm(true);
@@ -286,84 +295,108 @@ export default function AnimalsManagement() {
     setShowAnimalForm(false);
     setEditingAnimal(null);
     setFormData({
-      dateOfBirth: '',
-      animalType: 'Cow',
-      gender: 'Female',
-      status: 'Active',
-      healthStatus: 'Healthy',
-      breedId: '',
-      breed: '',
-      motherId: '',
-      fatherId: '',
-      shedId: '',
-      shedName: '',
-      registrationDate: new Date().toISOString().split('T')[0]
+      dateOfBirth: "",
+      animalType: "Cow",
+      gender: "Female",
+      status: "Active",
+      healthStatus: "Healthy",
+      breedId: "",
+      breed: "",
+      motherId: "",
+      fatherId: "",
+      shedId: "",
+      shedName: "",
+      registrationDate: new Date().toISOString().split("T")[0],
     });
+    setFormError(null);
   };
 
-  // Submit Handler - API Integration
+  // Submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.dateOfBirth || !formData.breed || !formData.shedId) {
+    setFormError(null);
+
+    // Basic validation
+    if (!formData.dateOfBirth) {
+      setFormError("Date of Birth is required.");
       return;
     }
-    setSubmitting(true);
-    setError(null);
-    setFormError(null);
-    const apiData = {
-      dob: formData.dateOfBirth,
-      animalType: formData.animalType,
-      gender: formData.gender,
-      status: formData.status,
-      healthStatus: formData.healthStatus,
-      breedId: formData.breedId ? parseInt(formData.breedId) : null,
-      breed: formData.breed || null,
-      motherId: formData.motherId ? parseInt(formData.motherId) : null,
-      fatherId: formData.fatherId ? parseInt(formData.fatherId) : null,
-      shedId: formData.shedId ? parseInt(formData.shedId) : null,
-      registrationDate: formData.registrationDate || null
-    };
+    if (!formData.shedId) {
+      setFormError("Please select a shed.");
+      return;
+    }
+    if (!formData.breedId) {
+      setFormError("Please select a breed.");
+      return;
+    }
 
+    // Check capacity
+    const shedInfo = shedCapacityMap[formData.shedId];
+    if (shedInfo && shedInfo.currentCount >= shedInfo.capacity) {
+      setFormError(`Shed "${sheds.find(s => String(s.id) === String(formData.shedId))?.shedName || ''}" is full.`);
+      return;
+    }
+
+    setSubmitting(true);
     try {
+      const apiData = {
+        dob: formData.dateOfBirth,
+        animalType: formData.animalType,
+        gender: formData.gender,
+        status: formData.status,
+        healthStatus: formData.healthStatus,
+        breedId: formData.breedId ? parseInt(formData.breedId) : null,
+        // Remove breed field – only send breedId
+        motherId: formData.motherId ? parseInt(formData.motherId) : null,
+        fatherId: formData.fatherId ? parseInt(formData.fatherId) : null,
+        shedId: formData.shedId ? parseInt(formData.shedId) : null,
+        registrationDate: formData.registrationDate || null,
+      };
+
+      let response;
       if (editingAnimal) {
-        const data = await animalService.updateAnimal(editingAnimal.id, apiData);
-        if (data && data.success) {
-          await fetchAnimals();
-          setSearchTerm('');
-          setSelectedType('all');
-          setSelectedSpecies('all');
-          setSelectedHealth('all');
-          setSelectedStatus('all');
-          handleCloseForm();
-        } else {
-          setFormError(data?.message || 'Update failed. Please try again.');
-        }
+        response = await animalService.updateAnimal(editingAnimal.id, apiData);
       } else {
-        const data = await animalService.createAnimal(apiData);
-        if (data && data.success) {
-          await fetchAnimals();
-          setSearchTerm('');
-          setSelectedType('all');
-          setSelectedSpecies('all');
-          setSelectedHealth('all');
-          setSelectedStatus('all');
-          handleCloseForm();
-        } else {
-          setFormError(data?.message || 'Failed to create animal. Please try again.');
-        }
+        response = await animalService.createAnimal(apiData);
       }
-    } catch (error) {
-      console.error("❌ API Error:", error);
-      // Extract backend error message if available
-      const backendMsg = error?.response?.data?.message;
-      if (backendMsg) {
-        // Surface validation errors (capacity, duplicates) in the form
-        setFormError(backendMsg);
+
+      if (response && response.success) {
+        await fetchAnimals(); // refresh data
+        handleCloseForm();
+        // Reset filters if desired
+        setSearchTerm("");
+        setSelectedType("all");
+        setSelectedSpecies("all");
+        setSelectedHealth("all");
+        setSelectedStatus("all");
       } else {
-        // Only fall back to localStorage for true network/server errors
+        // If API returned a message, display it
+        setFormError(response?.message || "Operation failed. Please try again.");
+      }
+    } catch (err) {
+      console.error("API error:", err);
+      // Extract detailed error message if available
+      let errorMsg = "An error occurred. Please try again.";
+      if (err.response?.data?.message) {
+        if (Array.isArray(err.response.data.message)) {
+          errorMsg = err.response.data.message.join(", ");
+        } else {
+          errorMsg = err.response.data.message;
+        }
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+      setFormError(errorMsg);
+
+      // Fallback to localStorage only if it's a network error (no response)
+      if (!err.response) {
         const newAnimal = {
-          id: editingAnimal ? editingAnimal.id : (animals.length > 0 ? Math.max(...animals.map(a => a.id)) + 1 : 1),
-          animalTagId: editingAnimal ? editingAnimal.animalTagId : 'Pending...',
+          id: editingAnimal
+            ? editingAnimal.id
+            : animals.length > 0
+            ? Math.max(...animals.map((a) => a.id)) + 1
+            : 1,
+          animalTagId: editingAnimal ? editingAnimal.animalTagId : "Pending...",
           dateOfBirth: formData.dateOfBirth,
           animalType: formData.animalType,
           gender: formData.gender,
@@ -374,22 +407,19 @@ export default function AnimalsManagement() {
           motherId: formData.motherId,
           fatherId: formData.fatherId,
           shedId: formData.shedId,
-          shedName: sheds.find(s => s.id.toString() === formData.shedId)?.shedName || formData.shedName,
-          registrationDate: formData.registrationDate
+          shedName:
+            sheds.find((s) => String(s.id) === String(formData.shedId))?.shedName ||
+            formData.shedName,
+          registrationDate: formData.registrationDate,
         };
         let updatedAnimals;
         if (editingAnimal) {
-          updatedAnimals = animals.map(a => a.id === editingAnimal.id ? newAnimal : a);
+          updatedAnimals = animals.map((a) => (a.id === editingAnimal.id ? newAnimal : a));
         } else {
           updatedAnimals = [newAnimal, ...animals];
         }
         setAnimals(updatedAnimals);
-        localStorage.setItem('livestockAnimals', JSON.stringify(updatedAnimals));
-        setSearchTerm('');
-        setSelectedType('all');
-        setSelectedSpecies('all');
-        setSelectedHealth('all');
-        setSelectedStatus('all');
+        localStorage.setItem("livestockAnimals", JSON.stringify(updatedAnimals));
         handleCloseForm();
       }
     } finally {
@@ -397,38 +427,52 @@ export default function AnimalsManagement() {
     }
   };
 
-  // Delete Handler - API Integration
+  // Delete handler
   const handleDelete = async (id) => {
+    setSubmitting(true);
     try {
-      setSubmitting(true);
       await animalService.deleteAnimal(id);
       await fetchAnimals();
       setDeleteConfirm(null);
-    } catch (error) {
-      console.error("❌ Delete failed, deleting locally:", error);
-      const updatedAnimals = animals.filter(a => a.id !== id);
+    } catch (err) {
+      console.error("Delete failed, deleting locally:", err);
+      const updatedAnimals = animals.filter((a) => a.id !== id);
       setAnimals(updatedAnimals);
-      localStorage.setItem('livestockAnimals', JSON.stringify(updatedAnimals));
+      localStorage.setItem("livestockAnimals", JSON.stringify(updatedAnimals));
       setDeleteConfirm(null);
     } finally {
       setSubmitting(false);
     }
   };
 
+  // Export to CSV
   const handleExport = () => {
     const csv = [
-      ['Name', 'Date of Birth', 'Animal Type', 'Gender', 'Status', 'Health Status', 'Breed'],
-      ...filteredAnimals.map(a => [a.breed + ' (ID: ' + a.id + ')', a.dateOfBirth, a.animalType, a.gender, a.status, a.healthStatus, a.breed])
-    ].map(row => row.join(',')).join('\n');
+      ["ID", "Tag ID", "Breed", "Date of Birth", "Type", "Shed", "Status", "Health"],
+      ...filteredAnimals.map((a) => [
+        a.id,
+        a.animalTagId || "N/A",
+        a.breed,
+        formatDate(a.dateOfBirth),
+        a.animalType,
+        a.shedName || "N/A",
+        a.status,
+        a.healthStatus,
+      ]),
+    ]
+      .map((row) => row.join(","))
+      .join("\n");
 
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const blob = new Blob([csv], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'animals-export.csv';
+    a.download = "animals-export.csv";
     a.click();
+    window.URL.revokeObjectURL(url);
   };
 
+  // Helper for corner brackets decoration
   const CornerBrackets = () => {
     const borderColor = isDark ? "border-green-500/20" : "border-neutral-300";
     return (
@@ -443,11 +487,14 @@ export default function AnimalsManagement() {
 
   const isActive = (path) => pathname === path;
 
+  // ========== RENDER ==========
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${inter.className} ${isDark ? 'bg-neutral-950 text-white' : 'bg-neutral-50 text-neutral-900'
-      }`}>
-
-      {/* ENHANCED BACKGROUND TEXTURE */}
+    <div
+      className={`min-h-screen transition-colors duration-300 ${inter.className} ${
+        isDark ? "bg-neutral-950 text-white" : "bg-neutral-50 text-neutral-900"
+      }`}
+    >
+      {/* Background texture */}
       <div className="fixed inset-0 pointer-events-none z-0">
         {isDark ? (
           <>
@@ -462,7 +509,7 @@ export default function AnimalsManagement() {
         )}
       </div>
 
-      {/* OVERLAY FOR MODALS */}
+      {/* Overlay for modals */}
       {(showAnimalForm || deleteConfirm || viewingAnimal) && (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
@@ -471,87 +518,97 @@ export default function AnimalsManagement() {
             setDeleteConfirm(null);
             setViewingAnimal(null);
           }}
-        ></div>
+        />
       )}
 
-      {/* NAVBAR WITH SIDEBAR */}
-      <Navbar
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        searchPlaceholder="Search ID, tag..."
-      />
+      <Navbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} searchPlaceholder="Search ID, tag..." />
 
-      {/* MAIN CONTENT */}
-      <div className={`${sidebarOpen ? 'ml-72' : 'ml-20'} transition-all duration-300 relative z-10`}>
+      <div
+        className={`${
+          sidebarOpen ? "ml-72" : "ml-20"
+        } transition-all duration-300 relative z-10`}
+      >
         <main className="p-6 lg:p-10 max-w-[1600px] mx-auto space-y-8">
-
-          {/* MODERNIZED TITLE & TABS */}
+          {/* Title & Tabs */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <div className="flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-green-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
                 </div>
                 <span className="font-mono text-[10px] text-green-500/80 uppercase tracking-[0.3em]">
                   [LIVESTOCK_SYSTEM]
                 </span>
               </div>
-              <h1 className={`${spaceGrotesk.className} text-4xl md:text-5xl font-bold uppercase tracking-tighter leading-[0.9] mb-2`}>
-                Animals <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600">Management</span>
+              <h1
+                className={`${spaceGrotesk.className} text-4xl md:text-5xl font-bold uppercase tracking-tighter leading-[0.9] mb-2`}
+              >
+                Animals{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600">
+                  Management
+                </span>
               </h1>
-              <p className={`text-sm font-light leading-relaxed ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                Track and manage your livestock animals, their health status, and breeding information.
+              <p
+                className={`text-sm font-light leading-relaxed ${
+                  isDark ? "text-neutral-400" : "text-neutral-600"
+                }`}
+              >
+                Track and manage your livestock animals, their health status, and breeding
+                information.
               </p>
-              {loading && (
-                <span className="text-xs text-green-500 font-mono mt-2">SYNCING_DATA...</span>
-              )}
-              {error && (
-                <span className="text-xs text-red-500 font-mono mt-2">{error}</span>
-              )}
+              {loading && <span className="text-xs text-green-500 font-mono mt-2">SYNCING_DATA...</span>}
+              {error && <span className="text-xs text-red-500 font-mono mt-2">{error}</span>}
             </div>
 
-            {/* Enhanced Tab Navigation */}
-            <div className={`flex p-1.5 border backdrop-blur-md ${isDark ? 'bg-neutral-900/50 border-white/10' : 'bg-white border-neutral-300 shadow-sm'
-              }`}>
+            <div
+              className={`flex p-1.5 border backdrop-blur-md ${
+                isDark
+                  ? "bg-neutral-900/50 border-white/10"
+                  : "bg-white border-neutral-300 shadow-sm"
+              }`}
+            >
               <Link href="/dashboard/livestockmanagement/animal/dashboard">
                 <button
-                  className={`cursor-pointer px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${isActive('/dashboard/livestockmanagement/animal/dashboard')
+                  className={`cursor-pointer px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
+                    isActive("/dashboard/livestockmanagement/animal/dashboard")
                       ? isDark
-                        ? 'bg-green-500/10 text-green-400 border border-green-500/20'
-                        : 'bg-green-500/10 text-green-700 border border-green-500/30'
+                        ? "bg-green-500/10 text-green-400 border border-green-500/20"
+                        : "bg-green-500/10 text-green-700 border border-green-500/30"
                       : isDark
-                        ? 'text-neutral-400 hover:text-green-400 hover:bg-white/5'
-                        : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'
-                    }`}
+                      ? "text-neutral-400 hover:text-green-400 hover:bg-white/5"
+                      : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
+                  }`}
                 >
                   Overview
                 </button>
               </Link>
               <Link href="/dashboard/livestockmanagement/animal/sheds">
                 <button
-                  className={`cursor-pointer px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${isActive('/dashboard/livestockmanagement/animal/sheds')
+                  className={`cursor-pointer px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
+                    isActive("/dashboard/livestockmanagement/animal/sheds")
                       ? isDark
-                        ? 'bg-green-500/10 text-green-400 border border-green-500/20'
-                        : 'bg-green-500/10 text-green-700 border border-green-500/30'
+                        ? "bg-green-500/10 text-green-400 border border-green-500/20"
+                        : "bg-green-500/10 text-green-700 border border-green-500/30"
                       : isDark
-                        ? 'text-neutral-400 hover:text-green-400 hover:bg-white/5'
-                        : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'
-                    }`}
+                      ? "text-neutral-400 hover:text-green-400 hover:bg-white/5"
+                      : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
+                  }`}
                 >
                   Sheds
                 </button>
               </Link>
               <Link href="/dashboard/livestockmanagement/animal/animals">
                 <button
-                  className={`cursor-pointer px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${isActive('/dashboard/livestockmanagement/animal/animals')
+                  className={`cursor-pointer px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
+                    isActive("/dashboard/livestockmanagement/animal/animals")
                       ? isDark
-                        ? 'bg-green-500/10 text-green-400 border border-green-500/20'
-                        : 'bg-green-500/10 text-green-700 border border-green-500/30'
+                        ? "bg-green-500/10 text-green-400 border border-green-500/20"
+                        : "bg-green-500/10 text-green-700 border border-green-500/30"
                       : isDark
-                        ? 'text-neutral-400 hover:text-green-400 hover:bg-white/5'
-                        : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'
-                    }`}
+                      ? "text-neutral-400 hover:text-green-400 hover:bg-white/5"
+                      : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
+                  }`}
                 >
                   Animals
                 </button>
@@ -559,188 +616,265 @@ export default function AnimalsManagement() {
             </div>
           </div>
 
-          {/* ENHANCED HEADER SECTION */}
+          {/* Header with Add button */}
           <section className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className={`h-[2px] w-8 ${isDark ? 'bg-green-500/50' : 'bg-green-500'}`} />
-                <h2 className={`text-[10px] font-black uppercase tracking-[0.25em] font-mono ${isDark ? 'text-neutral-400' : 'text-neutral-500'
-                  }`}>
+                <div
+                  className={`h-[2px] w-8 ${isDark ? "bg-green-500/50" : "bg-green-500"}`}
+                />
+                <h2
+                  className={`text-[10px] font-black uppercase tracking-[0.25em] font-mono ${
+                    isDark ? "text-neutral-400" : "text-neutral-500"
+                  }`}
+                >
                   Animal Records
                 </h2>
                 <button
                   onClick={fetchAnimals}
                   disabled={loading}
-                  className={`ml-2 text-xs font-mono px-2 py-1 border transition-all ${loading
-                      ? 'opacity-50 cursor-not-allowed'
+                  className={`ml-2 text-xs font-mono px-2 py-1 border transition-all ${
+                    loading
+                      ? "opacity-50 cursor-not-allowed"
                       : isDark
-                        ? 'hover:bg-white/5 border-white/10 hover:border-green-500/20'
-                        : 'hover:bg-neutral-50 border-neutral-200 hover:border-green-300'
-                    }`}
+                      ? "hover:bg-white/5 border-white/10 hover:border-green-500/20"
+                      : "hover:bg-neutral-50 border-neutral-200 hover:border-green-300"
+                  }`}
                   title="Refresh Data"
                 >
-                  {loading ? '...' : '⟲'}
+                  {loading ? "..." : "⟲"}
                 </button>
               </div>
               <button
-                className={`cursor-pointer group flex items-center gap-2 px-5 py-3 border transition-all duration-200 font-bold text-[11px] uppercase tracking-widest ${isDark
-                    ? 'bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700'
-                    : 'bg-green-600 hover:bg-green-700 text-white border-green-600 shadow-sm'
-                  }`}
+                className={`cursor-pointer group flex items-center gap-2 px-5 py-3 border transition-all duration-200 font-bold text-[11px] uppercase tracking-widest ${
+                  isDark
+                    ? "bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700"
+                    : "bg-green-600 hover:bg-green-700 text-white border-green-600 shadow-sm"
+                }`}
                 onClick={() => handleOpenForm()}
                 disabled={submitting}
               >
                 <Plus className="w-4 h-4" />
-                {submitting ? 'Saving...' : 'Add Animal'}
+                {submitting ? "Saving..." : "Add Animal"}
               </button>
             </div>
           </section>
 
-          {/* ENHANCED SEARCH AND FILTERS */}
+          {/* Search & Filters */}
           <section className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              {/* Search Card */}
-              <div className={`relative p-5 border lg:col-span-2 group/search ${isDark ? 'bg-neutral-900/50 border-white/5' : 'bg-white border-neutral-300 shadow-sm'
-                }`}>
+              <div
+                className={`relative p-5 border lg:col-span-2 group/search ${
+                  isDark
+                    ? "bg-neutral-900/50 border-white/5"
+                    : "bg-white border-neutral-300 shadow-sm"
+                }`}
+              >
                 <div className="flex items-center gap-3">
-                  <Search className={`w-5 h-5 ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`} />
+                  <Search
+                    className={`w-5 h-5 ${isDark ? "text-neutral-500" : "text-neutral-400"}`}
+                  />
                   <input
                     type="text"
                     placeholder="Search animals..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className={`flex-1 bg-transparent outline-none text-sm font-medium ${isDark ? 'placeholder:text-neutral-600' : 'placeholder:text-neutral-400'
-                      }`}
+                    className={`flex-1 bg-transparent outline-none text-sm font-medium ${
+                      isDark ? "placeholder:text-neutral-600" : "placeholder:text-neutral-400"
+                    }`}
                   />
                   {searchTerm && (
                     <button
-                      onClick={() => setSearchTerm('')}
-                      className={`p-1 transition-all ${isDark ? 'hover:text-white text-neutral-400' : 'hover:text-neutral-900 text-neutral-500'
-                        }`}
+                      onClick={() => setSearchTerm("")}
+                      className={`p-1 transition-all ${
+                        isDark
+                          ? "hover:text-white text-neutral-400"
+                          : "hover:text-neutral-900 text-neutral-500"
+                      }`}
                     >
                       <X className="w-4 h-4" />
                     </button>
                   )}
                 </div>
-                <div className={`absolute bottom-0 left-0 h-[2px] w-0 group-hover/search:w-full transition-all duration-500 ${isDark ? 'bg-green-500' : 'bg-green-600'
-                  }`} />
+                <div
+                  className={`absolute bottom-0 left-0 h-[2px] w-0 group-hover/search:w-full transition-all duration-500 ${
+                    isDark ? "bg-green-500" : "bg-green-600"
+                  }`}
+                />
                 <CornerBrackets />
               </div>
 
-              {/* Filter by Type */}
+              {/* Type filter */}
               <div className="relative">
-                <div className={`relative p-5 border cursor-pointer transition-all ${isDark ? 'bg-neutral-900/50 border-white/5 hover:border-green-500/20' : 'bg-white border-neutral-300 hover:border-green-500/30 shadow-sm'
-                  }`} onClick={() => setFilterTypeOpen(!filterTypeOpen)}>
+                <div
+                  className={`relative p-5 border cursor-pointer transition-all ${
+                    isDark
+                      ? "bg-neutral-900/50 border-white/5 hover:border-green-500/20"
+                      : "bg-white border-neutral-300 hover:border-green-500/30 shadow-sm"
+                  }`}
+                  onClick={() => setFilterTypeOpen(!filterTypeOpen)}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Filter className={`w-4 h-4 ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`} />
+                      <Filter
+                        className={`w-4 h-4 ${isDark ? "text-neutral-500" : "text-neutral-400"}`}
+                      />
                       <span className="text-[11px] font-bold uppercase tracking-wider">Type</span>
                     </div>
-                    <ChevronDown className={`w-4 h-4 transition-transform ${filterTypeOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform ${
+                        filterTypeOpen ? "rotate-180" : ""
+                      }`}
+                    />
                   </div>
                   <CornerBrackets />
                 </div>
-
                 {filterTypeOpen && (
-                  <div className={`absolute top-full mt-2 right-0 w-full border shadow-xl overflow-hidden z-20 backdrop-blur-md ${isDark ? 'bg-neutral-900/95 border-white/10' : 'bg-white/95 border-neutral-200'
-                    }`}>
-                    {['all', 'Unknown Classification', 'Cow', 'Bull', 'Calf', 'Heifer'].map((type) => (
-                      <button
-                        key={type}
-                        onClick={() => {
-                          setSelectedType(type);
-                          setFilterTypeOpen(false);
-                        }}
-                        className={`cursor-pointer w-full px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider transition-colors ${selectedType === type
-                            ? isDark
-                              ? 'bg-green-500/10 text-green-400 border-l-2 border-green-400'
-                              : 'bg-green-50 text-green-700 border-l-2 border-green-600'
-                            : isDark
-                              ? 'hover:bg-white/5'
-                              : 'hover:bg-neutral-50'
+                  <div
+                    className={`absolute top-full mt-2 right-0 w-full border shadow-xl overflow-hidden z-20 backdrop-blur-md ${
+                      isDark
+                        ? "bg-neutral-900/95 border-white/10"
+                        : "bg-white/95 border-neutral-200"
+                    }`}
+                  >
+                    {["all", "Unknown Classification", "Cow", "Bull", "Calf", "Heifer"].map(
+                      (type) => (
+                        <button
+                          key={type}
+                          onClick={() => {
+                            setSelectedType(type);
+                            setFilterTypeOpen(false);
+                          }}
+                          className={`cursor-pointer w-full px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider transition-colors ${
+                            selectedType === type
+                              ? isDark
+                                ? "bg-green-500/10 text-green-400 border-l-2 border-green-400"
+                                : "bg-green-50 text-green-700 border-l-2 border-green-600"
+                              : isDark
+                              ? "hover:bg-white/5"
+                              : "hover:bg-neutral-50"
                           }`}
-                      >
-                        {type === 'all' ? 'All Types' : type}
-                      </button>
-                    ))}
+                        >
+                          {type === "all" ? "All Types" : type}
+                        </button>
+                      )
+                    )}
                   </div>
                 )}
               </div>
 
-              {/* Filter by Species */}
+              {/* Species filter */}
               <div className="relative">
-                <div className={`relative p-5 border cursor-pointer transition-all ${isDark ? 'bg-neutral-900/50 border-white/5 hover:border-green-500/20' : 'bg-white border-neutral-300 hover:border-green-500/30 shadow-sm'
-                  }`} onClick={() => setFilterSpeciesOpen(!filterSpeciesOpen)}>
+                <div
+                  className={`relative p-5 border cursor-pointer transition-all ${
+                    isDark
+                      ? "bg-neutral-900/50 border-white/5 hover:border-green-500/20"
+                      : "bg-white border-neutral-300 hover:border-green-500/30 shadow-sm"
+                  }`}
+                  onClick={() => setFilterSpeciesOpen(!filterSpeciesOpen)}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Filter className={`w-4 h-4 ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`} />
-                      <span className="text-[11px] font-bold uppercase tracking-wider">Species</span>
+                      <Filter
+                        className={`w-4 h-4 ${isDark ? "text-neutral-500" : "text-neutral-400"}`}
+                      />
+                      <span className="text-[11px] font-bold uppercase tracking-wider">
+                        Species
+                      </span>
                     </div>
-                    <ChevronDown className={`w-4 h-4 transition-transform ${filterSpeciesOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform ${
+                        filterSpeciesOpen ? "rotate-180" : ""
+                      }`}
+                    />
                   </div>
                   <CornerBrackets />
                 </div>
-
                 {filterSpeciesOpen && (
-                  <div className={`absolute top-full mt-2 right-0 w-full border shadow-xl overflow-hidden z-20 backdrop-blur-md ${isDark ? 'bg-neutral-900/95 border-white/10' : 'bg-white/95 border-neutral-200'
-                    }`}>
-                    {['all', 'Holstein', 'Jersey', 'Angus'].map((species) => (
+                  <div
+                    className={`absolute top-full mt-2 right-0 w-full border shadow-xl overflow-hidden z-20 backdrop-blur-md ${
+                      isDark
+                        ? "bg-neutral-900/95 border-white/10"
+                        : "bg-white/95 border-neutral-200"
+                    }`}
+                  >
+                    {["all", "Holstein", "Jersey", "Angus"].map((species) => (
                       <button
                         key={species}
                         onClick={() => {
                           setSelectedSpecies(species);
                           setFilterSpeciesOpen(false);
                         }}
-                        className={`cursor-pointer w-full px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider transition-colors ${selectedSpecies === species
+                        className={`cursor-pointer w-full px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider transition-colors ${
+                          selectedSpecies === species
                             ? isDark
-                              ? 'bg-green-500/10 text-green-400 border-l-2 border-green-400'
-                              : 'bg-green-50 text-green-700 border-l-2 border-green-600'
+                              ? "bg-green-500/10 text-green-400 border-l-2 border-green-400"
+                              : "bg-green-50 text-green-700 border-l-2 border-green-600"
                             : isDark
-                              ? 'hover:bg-white/5'
-                              : 'hover:bg-neutral-50'
-                          }`}
+                            ? "hover:bg-white/5"
+                            : "hover:bg-neutral-50"
+                        }`}
                       >
-                        {species === 'all' ? 'All Species' : species}
+                        {species === "all" ? "All Species" : species}
                       </button>
                     ))}
                   </div>
                 )}
               </div>
 
-              {/* Filter by Health */}
+              {/* Health filter */}
               <div className="relative">
-                <div className={`relative p-5 border cursor-pointer transition-all ${isDark ? 'bg-neutral-900/50 border-white/5 hover:border-green-500/20' : 'bg-white border-neutral-300 hover:border-green-500/30 shadow-sm'
-                  }`} onClick={() => setFilterHealthOpen(!filterHealthOpen)}>
+                <div
+                  className={`relative p-5 border cursor-pointer transition-all ${
+                    isDark
+                      ? "bg-neutral-900/50 border-white/5 hover:border-green-500/20"
+                      : "bg-white border-neutral-300 hover:border-green-500/30 shadow-sm"
+                  }`}
+                  onClick={() => setFilterHealthOpen(!filterHealthOpen)}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Filter className={`w-4 h-4 ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`} />
-                      <span className="text-[11px] font-bold uppercase tracking-wider">Health</span>
+                      <Filter
+                        className={`w-4 h-4 ${isDark ? "text-neutral-500" : "text-neutral-400"}`}
+                      />
+                      <span className="text-[11px] font-bold uppercase tracking-wider">
+                        Health
+                      </span>
                     </div>
-                    <ChevronDown className={`w-4 h-4 transition-transform ${filterHealthOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform ${
+                        filterHealthOpen ? "rotate-180" : ""
+                      }`}
+                    />
                   </div>
                   <CornerBrackets />
                 </div>
-
                 {filterHealthOpen && (
-                  <div className={`absolute top-full mt-2 right-0 w-full border shadow-xl overflow-hidden z-20 backdrop-blur-md ${isDark ? 'bg-neutral-900/95 border-white/10' : 'bg-white/95 border-neutral-200'
-                    }`}>
-                    {['all', 'Healthy', 'Sick', 'Treatment'].map((health) => (
+                  <div
+                    className={`absolute top-full mt-2 right-0 w-full border shadow-xl overflow-hidden z-20 backdrop-blur-md ${
+                      isDark
+                        ? "bg-neutral-900/95 border-white/10"
+                        : "bg-white/95 border-neutral-200"
+                    }`}
+                  >
+                    {["all", "Healthy", "Sick", "Treatment"].map((health) => (
                       <button
                         key={health}
                         onClick={() => {
                           setSelectedHealth(health);
                           setFilterHealthOpen(false);
                         }}
-                        className={`cursor-pointer w-full px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider transition-colors ${selectedHealth === health
+                        className={`cursor-pointer w-full px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider transition-colors ${
+                          selectedHealth === health
                             ? isDark
-                              ? 'bg-green-500/10 text-green-400 border-l-2 border-green-400'
-                              : 'bg-green-50 text-green-700 border-l-2 border-green-600'
+                              ? "bg-green-500/10 text-green-400 border-l-2 border-green-400"
+                              : "bg-green-50 text-green-700 border-l-2 border-green-600"
                             : isDark
-                              ? 'hover:bg-white/5'
-                              : 'hover:bg-neutral-50'
-                          }`}
+                            ? "hover:bg-white/5"
+                            : "hover:bg-neutral-50"
+                        }`}
                       >
-                        {health === 'all' ? 'All Health' : health}
+                        {health === "all" ? "All Health" : health}
                       </button>
                     ))}
                   </div>
@@ -748,72 +882,91 @@ export default function AnimalsManagement() {
               </div>
             </div>
 
-            {/* Second Row - Status Filter and Actions */}
             <div className="flex flex-col md:flex-row gap-4">
-              {/* Filter by Status */}
+              {/* Status filter */}
               <div className="relative md:w-64">
-                <div className={`relative p-5 border cursor-pointer transition-all ${isDark ? 'bg-neutral-900/50 border-white/5 hover:border-green-500/20' : 'bg-white border-neutral-300 hover:border-green-500/30 shadow-sm'
-                  }`} onClick={() => setFilterStatusOpen(!filterStatusOpen)}>
+                <div
+                  className={`relative p-5 border cursor-pointer transition-all ${
+                    isDark
+                      ? "bg-neutral-900/50 border-white/5 hover:border-green-500/20"
+                      : "bg-white border-neutral-300 hover:border-green-500/30 shadow-sm"
+                  }`}
+                  onClick={() => setFilterStatusOpen(!filterStatusOpen)}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Filter className={`w-4 h-4 ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`} />
-                      <span className="text-[11px] font-bold uppercase tracking-wider">Status</span>
+                      <Filter
+                        className={`w-4 h-4 ${isDark ? "text-neutral-500" : "text-neutral-400"}`}
+                      />
+                      <span className="text-[11px] font-bold uppercase tracking-wider">
+                        Status
+                      </span>
                     </div>
-                    <ChevronDown className={`w-4 h-4 transition-transform ${filterStatusOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform ${
+                        filterStatusOpen ? "rotate-180" : ""
+                      }`}
+                    />
                   </div>
                   <CornerBrackets />
                 </div>
-
                 {filterStatusOpen && (
-                  <div className={`absolute top-full mt-2 right-0 w-full border shadow-xl overflow-hidden z-20 backdrop-blur-md ${isDark ? 'bg-neutral-900/95 border-white/10' : 'bg-white/95 border-neutral-200'
-                    }`}>
-                    {['all', 'Active', 'Sold', 'Deceased'].map((status) => (
+                  <div
+                    className={`absolute top-full mt-2 right-0 w-full border shadow-xl overflow-hidden z-20 backdrop-blur-md ${
+                      isDark
+                        ? "bg-neutral-900/95 border-white/10"
+                        : "bg-white/95 border-neutral-200"
+                    }`}
+                  >
+                    {["all", "Active", "Sold", "Deceased"].map((status) => (
                       <button
                         key={status}
                         onClick={() => {
                           setSelectedStatus(status);
                           setFilterStatusOpen(false);
                         }}
-                        className={`cursor-pointer w-full px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider transition-colors ${selectedStatus === status
+                        className={`cursor-pointer w-full px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider transition-colors ${
+                          selectedStatus === status
                             ? isDark
-                              ? 'bg-green-500/10 text-green-400 border-l-2 border-green-400'
-                              : 'bg-green-50 text-green-700 border-l-2 border-green-600'
+                              ? "bg-green-500/10 text-green-400 border-l-2 border-green-400"
+                              : "bg-green-50 text-green-700 border-l-2 border-green-600"
                             : isDark
-                              ? 'hover:bg-white/5'
-                              : 'hover:bg-neutral-50'
-                          }`}
+                            ? "hover:bg-white/5"
+                            : "hover:bg-neutral-50"
+                        }`}
                       >
-                        {status === 'all' ? 'All Status' : status}
+                        {status === "all" ? "All Status" : status}
                       </button>
                     ))}
                   </div>
                 )}
               </div>
 
-              {/* Actions */}
               <div className="flex-1 flex items-center justify-end gap-3">
                 <button
                   onClick={() => {
-                    setSearchTerm('');
-                    setSelectedType('all');
-                    setSelectedSpecies('all');
-                    setSelectedHealth('all');
-                    setSelectedStatus('all');
+                    setSearchTerm("");
+                    setSelectedType("all");
+                    setSelectedSpecies("all");
+                    setSelectedHealth("all");
+                    setSelectedStatus("all");
                   }}
-                  className={`flex cursor-pointer items-center gap-2 px-5 py-3 border transition-all font-bold text-[11px] uppercase tracking-widest ${isDark
-                      ? 'bg-neutral-800 hover:bg-neutral-700 text-white border-neutral-700'
-                      : 'bg-white hover:bg-neutral-50 text-neutral-700 border-neutral-300 shadow-sm'
-                    }`}
+                  className={`flex cursor-pointer items-center gap-2 px-5 py-3 border transition-all font-bold text-[11px] uppercase tracking-widest ${
+                    isDark
+                      ? "bg-neutral-800 hover:bg-neutral-700 text-white border-neutral-700"
+                      : "bg-white hover:bg-neutral-50 text-neutral-700 border-neutral-300 shadow-sm"
+                  }`}
                 >
                   <AlertCircle className="w-4 h-4" />
                   Clear
                 </button>
                 <button
                   onClick={handleExport}
-                  className={`cursor-pointer flex items-center gap-2 px-5 py-3 border transition-all font-bold text-[11px] uppercase tracking-widest ${isDark
-                      ? 'bg-green-600 hover:bg-green-700 text-white border-green-600'
-                      : 'bg-green-600 hover:bg-green-700 text-white border-green-600 shadow-sm'
-                    }`}
+                  className={`cursor-pointer flex items-center gap-2 px-5 py-3 border transition-all font-bold text-[11px] uppercase tracking-widest ${
+                    isDark
+                      ? "bg-green-600 hover:bg-green-700 text-white border-green-600"
+                      : "bg-green-600 hover:bg-green-700 text-white border-green-600 shadow-sm"
+                  }`}
                 >
                   <Download className="w-4 h-4" />
                   Export
@@ -822,716 +975,955 @@ export default function AnimalsManagement() {
             </div>
           </section>
 
-          {/* ENHANCED ANIMALS TABLE */}
+          {/* Animals Table */}
           <section className="space-y-6">
             <div className="flex items-center gap-3">
-              <div className={`h-[2px] w-8 ${isDark ? 'bg-amber-500/50' : 'bg-amber-500'}`} />
-              <h2 className={`text-[10px] font-black uppercase tracking-[0.25em] font-mono ${isDark ? 'text-neutral-400' : 'text-neutral-500'
-                }`}>
+              <div
+                className={`h-[2px] w-8 ${isDark ? "bg-amber-500/50" : "bg-amber-500"}`}
+              />
+              <h2
+                className={`text-[10px] font-black uppercase tracking-[0.25em] font-mono ${
+                  isDark ? "text-neutral-400" : "text-neutral-500"
+                }`}
+              >
                 All Animals
               </h2>
             </div>
 
-            {/* Table Container */}
-            <div className={`relative border overflow-hidden ${isDark ? 'bg-neutral-900/30 border-white/5' : 'bg-white border-neutral-300 shadow-sm'
-              }`}>
+            <div
+              className={`relative border overflow-hidden ${
+                isDark
+                  ? "bg-neutral-900/30 border-white/5"
+                  : "bg-white border-neutral-300 shadow-sm"
+              }`}
+            >
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className={`border-b ${isDark ? 'bg-neutral-900/50 border-white/5' : 'bg-neutral-50 border-neutral-200'}`}>
+                  <thead
+                    className={`border-b ${
+                      isDark
+                        ? "bg-neutral-900/50 border-white/5"
+                        : "bg-neutral-50 border-neutral-200"
+                    }`}
+                  >
                     <tr>
-                      <th className={`px-6 py-4 text-left text-[9px] font-black uppercase tracking-[0.25em] font-mono ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>ID</th>
-                      <th className={`px-6 py-4 text-left text-[9px] font-black uppercase tracking-[0.25em] font-mono ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>Tag ID</th>
-                      <th className={`px-6 py-4 text-left text-[9px] font-black uppercase tracking-[0.25em] font-mono ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>Breed</th>
-                      <th className={`px-6 py-4 text-left text-[9px] font-black uppercase tracking-[0.25em] font-mono ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>Date of Birth</th>
-                      <th className={`px-6 py-4 text-left text-[9px] font-black uppercase tracking-[0.25em] font-mono ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>Animal Type</th>
-                      <th className={`px-6 py-4 text-left text-[9px] font-black uppercase tracking-[0.25em] font-mono ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>Shed</th>
-                      <th className={`px-6 py-4 text-left text-[9px] font-black uppercase tracking-[0.25em] font-mono ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>Status</th>
-                      <th className={`px-6 py-4 text-left text-[9px] font-black uppercase tracking-[0.25em] font-mono ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>Health</th>
-                      <th className={`px-6 py-4 text-right text-[9px] font-black uppercase tracking-[0.25em] font-mono ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>Actions</th>
+                      <th
+                        className={`px-6 py-4 text-left text-[9px] font-black uppercase tracking-[0.25em] font-mono ${
+                          isDark ? "text-neutral-500" : "text-neutral-400"
+                        }`}
+                      >
+                        ID
+                      </th>
+                      <th
+                        className={`px-6 py-4 text-left text-[9px] font-black uppercase tracking-[0.25em] font-mono ${
+                          isDark ? "text-neutral-500" : "text-neutral-400"
+                        }`}
+                      >
+                        Tag ID
+                      </th>
+                      <th
+                        className={`px-6 py-4 text-left text-[9px] font-black uppercase tracking-[0.25em] font-mono ${
+                          isDark ? "text-neutral-500" : "text-neutral-400"
+                        }`}
+                      >
+                        Breed
+                      </th>
+                      <th
+                        className={`px-6 py-4 text-left text-[9px] font-black uppercase tracking-[0.25em] font-mono ${
+                          isDark ? "text-neutral-500" : "text-neutral-400"
+                        }`}
+                      >
+                        Date of Birth
+                      </th>
+                      <th
+                        className={`px-6 py-4 text-left text-[9px] font-black uppercase tracking-[0.25em] font-mono ${
+                          isDark ? "text-neutral-500" : "text-neutral-400"
+                        }`}
+                      >
+                        Animal Type
+                      </th>
+                      <th
+                        className={`px-6 py-4 text-left text-[9px] font-black uppercase tracking-[0.25em] font-mono ${
+                          isDark ? "text-neutral-500" : "text-neutral-400"
+                        }`}
+                      >
+                        Shed
+                      </th>
+                      <th
+                        className={`px-6 py-4 text-left text-[9px] font-black uppercase tracking-[0.25em] font-mono ${
+                          isDark ? "text-neutral-500" : "text-neutral-400"
+                        }`}
+                      >
+                        Status
+                      </th>
+                      <th
+                        className={`px-6 py-4 text-left text-[9px] font-black uppercase tracking-[0.25em] font-mono ${
+                          isDark ? "text-neutral-500" : "text-neutral-400"
+                        }`}
+                      >
+                        Health
+                      </th>
+                      <th
+                        className={`px-6 py-4 text-right text-[9px] font-black uppercase tracking-[0.25em] font-mono ${
+                          isDark ? "text-neutral-500" : "text-neutral-400"
+                        }`}
+                      >
+                        Actions
+                      </th>
                     </tr>
                   </thead>
-              <tbody className={`divide-y ${isDark ? 'divide-white/5' : 'divide-neutral-200'}`}>
-                {loading && animals.length === 0 ? (
-                  <tr>
-                    <td colSpan="8" className="p-16 text-center">
-                      <div className="animate-spin w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                      <p className={`text-sm font-medium ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>
-                        Loading animals...
-                      </p>
-                    </td>
-                  </tr>
-                ) : filteredAnimals.length > 0 ? (
-                  filteredAnimals.map((animal) => (
-                    <tr key={animal.id} className={`transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-neutral-50'
-                      }`}>
-                      <td className="px-6 py-4">
-                        <p className={`font-mono text-[10px] ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>
-                          #{animal.id}
-                        </p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2 py-1 bg-green-500/10 text-green-600 rounded text-xs font-mono font-bold border border-green-500/20`}>
-                          {animal.animalTagId || 'N/A'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className={`font-bold ${spaceGrotesk.className}`}>{animal.breed}</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className={`text-sm font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                          {formatDate(animal.dateOfBirth)}
-                        </p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className={`text-sm font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                          {animal.animalType}
-                        </p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className={`text-sm font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                          {animal.shedName || 'N/A'}
-                        </p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-3 py-1 border text-[10px] font-bold font-mono uppercase tracking-wider ${animal.status === 'Active'
-                            ? isDark
-                              ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                              : 'bg-green-50 text-green-700 border-green-200'
-                            : animal.status === 'Sold'
-                              ? isDark
-                                ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                                : 'bg-blue-50 text-blue-700 border-blue-200'
-                              : isDark
-                                ? 'bg-neutral-500/10 text-neutral-400 border-neutral-500/20'
-                                : 'bg-neutral-100 text-neutral-600 border-neutral-200'
-                          }`}>
-                          {animal.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-3 py-1 border text-[10px] font-bold font-mono uppercase tracking-wider ${animal.healthStatus === 'Healthy'
-                            ? isDark
-                              ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                              : 'bg-green-50 text-green-700 border-green-200'
-                            : animal.healthStatus === 'Sick'
-                              ? isDark
-                                ? 'bg-red-500/10 text-red-400 border-red-500/20'
-                                : 'bg-red-50 text-red-700 border-red-200'
-                              : isDark
-                                ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                                : 'bg-amber-50 text-amber-700 border-amber-200'
-                          }`}>
-                          {animal.healthStatus}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            className={`p-2.5 border transition-all ${isDark
-                                ? 'hover:bg-white/10 border-white/10 hover:border-white/20'
-                                : 'hover:bg-neutral-50 border-neutral-200 hover:border-neutral-300'
-                              }`}
-                            title="View Details"
-                            onClick={() => setViewingAnimal(animal)}
+                  <tbody
+                    className={`divide-y ${
+                      isDark ? "divide-white/5" : "divide-neutral-200"
+                    }`}
+                  >
+                    {loading && animals.length === 0 ? (
+                      <tr>
+                        <td colSpan={9} className="p-16 text-center">
+                          <div className="animate-spin w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full mx-auto mb-4" />
+                          <p
+                            className={`text-sm font-medium ${
+                              isDark ? "text-neutral-500" : "text-neutral-400"
+                            }`}
                           >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            className={`p-2.5 border transition-all ${isDark
-                                ? 'hover:bg-white/10 border-white/10 hover:border-white/20'
-                                : 'hover:bg-neutral-50 border-neutral-200 hover:border-neutral-300'
+                            Loading animals...
+                          </p>
+                        </td>
+                      </tr>
+                    ) : filteredAnimals.length > 0 ? (
+                      filteredAnimals.map((animal) => (
+                        <tr
+                          key={animal.id}
+                          className={`transition-colors ${
+                            isDark ? "hover:bg-white/5" : "hover:bg-neutral-50"
+                          }`}
+                        >
+                          <td className="px-6 py-4">
+                            <p
+                              className={`font-mono text-[10px] ${
+                                isDark ? "text-neutral-500" : "text-neutral-400"
                               }`}
-                            title="View Records"
-                            onClick={() => alert(`Records for: ${animal.breed} (ID: ${animal.id})`)}
-                          >
-                            <FileText className="w-4 h-4" />
-                          </button>
-                          {animal.healthStatus === 'Sick' && (
-                            <button
-                              className={`p-2.5 border transition-all ${isDark
-                                  ? 'hover:bg-red-500/10 text-red-400 border-white/10 hover:border-red-500/20'
-                                  : 'hover:bg-red-50 text-red-600 border-neutral-200 hover:border-red-300'
-                                }`}
-                              title="Add Health Record"
-                              onClick={() => {
-                                router.push(`/livestockmanagement/health/records?addRecord=true&animalId=${animal.id}&species=${encodeURIComponent(animal.animalType)}&breed=${encodeURIComponent(animal.breed)}`);
-                              }}
                             >
-                              <Plus className="w-4 h-4 text-red-500" />
-                            </button>
-                          )}
-
-                          <button
-                            className={`p-2.5 border transition-all ${isDark
-                                ? 'hover:bg-white/10 border-white/10 hover:border-white/20'
-                                : 'hover:bg-neutral-50 border-neutral-200 hover:border-neutral-300'
+                              #{animal.id}
+                            </p>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="inline-flex items-center px-2 py-1 bg-green-500/10 text-green-600 rounded text-xs font-mono font-bold border border-green-500/20">
+                              {animal.animalTagId || "N/A"}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <p className={`font-bold ${spaceGrotesk.className}`}>
+                              {animal.breed}
+                            </p>
+                          </td>
+                          <td className="px-6 py-4">
+                            <p
+                              className={`text-sm font-medium ${
+                                isDark ? "text-neutral-400" : "text-neutral-600"
                               }`}
-                            title="Edit"
-                            onClick={() => handleOpenForm(animal)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            className={`p-2.5 border transition-all ${isDark
-                                ? 'hover:bg-red-500/20 text-red-400 border-white/10 hover:border-red-500/20'
-                                : 'hover:bg-red-50 text-red-600 border-neutral-200 hover:border-red-200'
+                            >
+                              {formatDate(animal.dateOfBirth)}
+                            </p>
+                          </td>
+                          <td className="px-6 py-4">
+                            <p
+                              className={`text-sm font-medium ${
+                                isDark ? "text-neutral-400" : "text-neutral-600"
                               }`}
-                            title="Delete"
-                            onClick={() => setDeleteConfirm(animal)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="8">
-                      <div className="p-16 text-center">
-                        <Activity className={`w-16 h-16 mx-auto mb-4 ${isDark ? 'text-neutral-800' : 'text-neutral-200'}`} />
-                        <h3 className={`${spaceGrotesk.className} text-2xl font-bold mb-2 uppercase tracking-tight`}>
-                          No animals found
-                        </h3>
-                        <p className={`text-sm font-medium ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>
-                          Try adjusting your search or filter criteria
-                        </p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <CornerBrackets />
-      </div>
-    </section>
-
-        </main >
-      </div >
-
-    {/* ENHANCED ADD/EDIT ANIMAL FORM SIDEBAR */ }
-      <div className={`fixed top-0 right-0 h-full w-full md:w-[500px] z-50 transform transition-transform duration-300 border-l ${
-        showAnimalForm ? 'translate-x-0' : 'translate-x-full'
-      } ${
-        isDark ? 'bg-neutral-950 border-white/10' : 'bg-white border-neutral-200'
-      } shadow-2xl overflow-y-auto`}>
-  <div className="p-8">
-    {/* Header */}
-    <div className={`flex items-center justify-between mb-8 pb-6 border-b ${isDark ? 'border-white/10' : 'border-neutral-200'}`}>
-      <div>
-        <div className="flex items-center gap-2 mb-2">
-          <div className={`h-[2px] w-6 ${isDark ? 'bg-green-500' : 'bg-green-600'}`} />
-          <span className={`text-[9px] font-mono font-bold uppercase tracking-[0.3em] ${isDark ? 'text-green-400' : 'text-green-600'
-            }`}>
-            {editingAnimal ? 'EDIT_MODE' : 'CREATE_MODE'}
-          </span>
-        </div>
-        <h2 className={`${spaceGrotesk.className} text-3xl font-bold uppercase tracking-tight mb-1`}>
-          {editingAnimal ? 'Edit Animal' : 'Add Animal'}
-        </h2>
-        <p className={`text-sm font-medium ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>
-          {editingAnimal ? 'Update animal information' : 'Register a new animal'}
-        </p>
-      </div>
-      <button
-        onClick={handleCloseForm}
-        className={`p-2.5 border transition-all ${isDark
-            ? 'hover:bg-white/10 border-white/10 hover:border-white/20'
-            : 'hover:bg-neutral-50 border-neutral-200 hover:border-neutral-300'
-          }`}
-        disabled={submitting}
-      >
-        <X className="w-5 h-5" />
-      </button>
-    </div>
-
-    {/* Form */}
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Shed Name */}
-      <div>
-        <label className={`block text-[11px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${isDark ? 'text-neutral-400' : 'text-neutral-500'
-          }`}>
-          Shed Name *
-        </label>
-        <select
-          required
-          value={formData.shedId}
-          onChange={(e) => setFormError(null) || setFormData({ ...formData, shedId: e.target.value })}
-          className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${isDark
-              ? 'bg-neutral-900 border-white/10 focus:border-green-500'
-              : 'bg-neutral-50 border-neutral-300 focus:border-green-500'
-            }`}
-          disabled={submitting}
-        >
-          <option value="">Select a Shed</option>
-          {sheds.map(shed => {
-            const info = shedCapacityMap[shed.id];
-            const available = info ? info.capacity - info.currentCount : null;
-            const isFull = available !== null && available <= 0;
-            return (
-              <option key={shed.id} value={shed.id} disabled={isFull}>
-                {shed.shedName || shed.name}{info ? ` (${info.currentCount}/${info.capacity}${isFull ? ' - FULL' : ''})` : ''}
-              </option>
-            );
-          })}
-        </select>
-        {/* Capacity indicator */}
-        {formData.shedId && shedCapacityMap[formData.shedId] && (() => {
-          const info = shedCapacityMap[formData.shedId];
-          const available = info.capacity - info.currentCount;
-          const isFull = available <= 0;
-          return (
-            <div className={`mt-2 flex items-center gap-2 text-xs font-mono font-bold ${
-              isFull ? 'text-red-500' : available <= 2 ? 'text-amber-500' : 'text-green-600'
-            }`}>
-              <span className={`inline-block w-2 h-2 rounded-full ${isFull ? 'bg-red-500' : available <= 2 ? 'bg-amber-500' : 'bg-green-500'}`} />
-              {isFull
-                ? `SHED FULL — No available slots`
-                : `${available} slot${available === 1 ? '' : 's'} available of ${info.capacity} capacity`
-              }
+                            >
+                              {animal.animalType}
+                            </p>
+                          </td>
+                          <td className="px-6 py-4">
+                            <p
+                              className={`text-sm font-medium ${
+                                isDark ? "text-neutral-400" : "text-neutral-600"
+                              }`}
+                            >
+                              {animal.shedName || "N/A"}
+                            </p>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`inline-flex items-center px-3 py-1 border text-[10px] font-bold font-mono uppercase tracking-wider ${
+                                animal.status === "Active"
+                                  ? isDark
+                                    ? "bg-green-500/10 text-green-400 border-green-500/20"
+                                    : "bg-green-50 text-green-700 border-green-200"
+                                  : animal.status === "Sold"
+                                  ? isDark
+                                    ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                                    : "bg-blue-50 text-blue-700 border-blue-200"
+                                  : isDark
+                                  ? "bg-neutral-500/10 text-neutral-400 border-neutral-500/20"
+                                  : "bg-neutral-100 text-neutral-600 border-neutral-200"
+                              }`}
+                            >
+                              {animal.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`inline-flex items-center px-3 py-1 border text-[10px] font-bold font-mono uppercase tracking-wider ${
+                                animal.healthStatus === "Healthy"
+                                  ? isDark
+                                    ? "bg-green-500/10 text-green-400 border-green-500/20"
+                                    : "bg-green-50 text-green-700 border-green-200"
+                                  : animal.healthStatus === "Sick"
+                                  ? isDark
+                                    ? "bg-red-500/10 text-red-400 border-red-500/20"
+                                    : "bg-red-50 text-red-700 border-red-200"
+                                  : isDark
+                                  ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                                  : "bg-amber-50 text-amber-700 border-amber-200"
+                              }`}
+                            >
+                              {animal.healthStatus}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                className={`p-2.5 border transition-all ${
+                                  isDark
+                                    ? "hover:bg-white/10 border-white/10 hover:border-white/20"
+                                    : "hover:bg-neutral-50 border-neutral-200 hover:border-neutral-300"
+                                }`}
+                                title="View Details"
+                                onClick={() => setViewingAnimal(animal)}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              <button
+                                className={`p-2.5 border transition-all ${
+                                  isDark
+                                    ? "hover:bg-white/10 border-white/10 hover:border-white/20"
+                                    : "hover:bg-neutral-50 border-neutral-200 hover:border-neutral-300"
+                                }`}
+                                title="View Records"
+                                onClick={() =>
+                                  alert(`Records for: ${animal.breed} (ID: ${animal.id})`)
+                                }
+                              >
+                                <FileText className="w-4 h-4" />
+                              </button>
+                              {animal.healthStatus === "Sick" && (
+                                <button
+                                  className={`p-2.5 border transition-all ${
+                                    isDark
+                                      ? "hover:bg-red-500/10 text-red-400 border-white/10 hover:border-red-500/20"
+                                      : "hover:bg-red-50 text-red-600 border-neutral-200 hover:border-red-300"
+                                  }`}
+                                  title="Add Health Record"
+                                  onClick={() => {
+                                    router.push(
+                                      `/livestockmanagement/health/records?addRecord=true&animalId=${animal.id}&species=${encodeURIComponent(
+                                        animal.animalType
+                                      )}&breed=${encodeURIComponent(animal.breed)}`
+                                    );
+                                  }}
+                                >
+                                  <Plus className="w-4 h-4 text-red-500" />
+                                </button>
+                              )}
+                              <button
+                                className={`p-2.5 border transition-all ${
+                                  isDark
+                                    ? "hover:bg-white/10 border-white/10 hover:border-white/20"
+                                    : "hover:bg-neutral-50 border-neutral-200 hover:border-neutral-300"
+                                }`}
+                                title="Edit"
+                                onClick={() => handleOpenForm(animal)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                className={`p-2.5 border transition-all ${
+                                  isDark
+                                    ? "hover:bg-red-500/20 text-red-400 border-white/10 hover:border-red-500/20"
+                                    : "hover:bg-red-50 text-red-600 border-neutral-200 hover:border-red-200"
+                                }`}
+                                title="Delete"
+                                onClick={() => setDeleteConfirm(animal)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={9}>
+                          <div className="p-16 text-center">
+                            <Activity
+                              className={`w-16 h-16 mx-auto mb-4 ${
+                                isDark ? "text-neutral-800" : "text-neutral-200"
+                              }`}
+                            />
+                            <h3
+                              className={`${spaceGrotesk.className} text-2xl font-bold mb-2 uppercase tracking-tight`}
+                            >
+                              No animals found
+                            </h3>
+                            <p
+                              className={`text-sm font-medium ${
+                                isDark ? "text-neutral-500" : "text-neutral-400"
+                              }`}
+                            >
+                              Try adjusting your search or filter criteria
+                            </p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <CornerBrackets />
             </div>
-          );
-        })()}
+          </section>
+        </main>
       </div>
 
-
-      {/* Date of Birth */}
-      <div>
-        <label className={`block text-[11px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${isDark ? 'text-neutral-400' : 'text-neutral-500'
-          }`}>
-          Date of Birth *
-        </label>
-        <input
-          type="date"
-          required
-          value={formData.dateOfBirth}
-          onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-          className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${isDark
-              ? 'bg-neutral-900 border-white/10 focus:border-green-500'
-              : 'bg-neutral-50 border-neutral-300 focus:border-green-500'
+      {/* Add/Edit Form Modal */}
+      <div
+        className={`fixed top-0 right-0 h-full w-full md:w-[500px] z-50 transform transition-transform duration-300 border-l ${
+          showAnimalForm ? "translate-x-0" : "translate-x-full"
+        } ${
+          isDark
+            ? "bg-neutral-950 border-white/10"
+            : "bg-white border-neutral-200"
+        } shadow-2xl overflow-y-auto`}
+      >
+        <div className="p-8">
+          <div
+            className={`flex items-center justify-between mb-8 pb-6 border-b ${
+              isDark ? "border-white/10" : "border-neutral-200"
             }`}
-          disabled={submitting}
-        />
-      </div>
-
-      {/* Animal Type */}
-      <div>
-        <label className={`block text-[11px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${isDark ? 'text-neutral-400' : 'text-neutral-500'
-          }`}>
-          Animal Type *
-        </label>
-        <select
-          value={formData.animalType}
-          onChange={(e) => {
-            const newAnimalType = e.target.value;
-            const availableBreedsForType = breeds.filter(b => (b.species || b.animalType) === newAnimalType);
-            const firstBreed = availableBreedsForType.length > 0 ? availableBreedsForType[0] : null;
-            setFormData({ 
-              ...formData, 
-              animalType: newAnimalType, 
-              breedId: firstBreed ? (firstBreed.id || '') : '',
-              breed: firstBreed ? (firstBreed.name || firstBreed) : '' 
-            });
-          }}
-          className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${isDark
-              ? 'bg-neutral-900 border-white/10 focus:border-green-500'
-              : 'bg-neutral-50 border-neutral-300 focus:border-green-500'
-            }`}
-          disabled={submitting}
-        >
-          {species.map(sp => (
-            <option key={sp.id || sp.name || sp} value={sp.name || sp}>{sp.name || sp}</option>
-          ))}
-        </select>
-      </div>
-
-
-      {/* Gender */}
-      <div>
-        <label className={`block text-[11px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${isDark ? 'text-neutral-400' : 'text-neutral-500'
-          }`}>
-          Gender *
-        </label>
-        <select
-          value={formData.gender}
-          onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-          className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${isDark
-              ? 'bg-neutral-900 border-white/10 focus:border-green-500'
-              : 'bg-neutral-50 border-neutral-300 focus:border-green-500'
-            }`}
-          disabled={submitting}
-        >
-          <option value="Female">Female</option>
-          <option value="Male">Male</option>
-        </select>
-      </div>
-
-      {/* Breed */}
-      <div>
-        <label className={`block text-[11px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${isDark ? 'text-neutral-400' : 'text-neutral-500'
-          }`}>
-          Breed *
-        </label>
-        <select
-          required
-          value={formData.breedId}
-          onChange={(e) => {
-            const selectedBreed = breeds.find(b => (b.id || b.name) == e.target.value);
-            setFormData({ 
-              ...formData, 
-              breedId: e.target.value,
-              breed: selectedBreed ? (selectedBreed.name || e.target.value) : ''
-            });
-          }}
-          className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${isDark
-              ? 'bg-neutral-900 border-white/10 focus:border-green-500'
-              : 'bg-neutral-50 border-neutral-300 focus:border-green-500'
-            }`}
-          disabled={submitting}
-        >
-          <option value="">Select a Breed</option>
-          {breeds.filter(b => (b.species || b.animalType) === formData.animalType).map(br => (
-            <option key={br.id || br.name || br} value={br.id || br.name}>{br.name || br}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Mother (Optional) */}
-      {/* <div>
-        <label className={`block text-[11px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${isDark ? 'text-neutral-400' : 'text-neutral-500'
-          }`}>
-          Mother (Optional)
-        </label>
-        <select
-          value={formData.motherId}
-          onChange={(e) => setFormData({ ...formData, motherId: e.target.value })}
-          className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${isDark
-              ? 'bg-neutral-900 border-white/10 focus:border-green-500'
-              : 'bg-neutral-50 border-neutral-300 focus:border-green-500'
-            }`}
-          disabled={submitting}
-        >
-          <option value="">None / Unknown</option>
-          {animals.filter(a => a.gender === 'Female' && (!editingAnimal || a.id !== editingAnimal.id)).map(a => (
-            <option key={a.id} value={a.id}>{a.animalTagId || a.id}</option>
-          ))}
-        </select>
-      </div> */}
-
-      {/* Father (Optional) */}
-      {/* <div>
-        <label className={`block text-[11px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${isDark ? 'text-neutral-400' : 'text-neutral-500'
-          }`}>
-          Father (Optional)
-        </label>
-        <select
-          value={formData.fatherId}
-          onChange={(e) => setFormData({ ...formData, fatherId: e.target.value })}
-          className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${isDark
-              ? 'bg-neutral-900 border-white/10 focus:border-green-500'
-              : 'bg-neutral-50 border-neutral-300 focus:border-green-500'
-            }`}
-          disabled={submitting}
-        >
-          <option value="">None / Unknown</option>
-          {animals.filter(a => a.gender === 'Male' && (!editingAnimal || a.id !== editingAnimal.id)).map(a => (
-            <option key={a.id} value={a.id}>{a.animalTagId || a.id}</option>
-          ))}
-        </select>
-      </div> */}
-
-      {/* Registration Date */}
-      <div>
-        <label className={`block text-[11px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${isDark ? 'text-neutral-400' : 'text-neutral-500'
-          }`}>
-          Registration Date
-        </label>
-        <input
-          type="date"
-          readOnly
-          value={formData.registrationDate}
-          className={`w-full px-4 py-3.5 border outline-none transition-all font-medium cursor-not-allowed opacity-70 ${isDark
-              ? 'bg-neutral-900 border-white/10'
-              : 'bg-neutral-50 border-neutral-300'
-            }`}
-        />
-      </div>
-
-
-      {/* Status */}
-      <div>
-        <label className={`block text-[11px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${isDark ? 'text-neutral-400' : 'text-neutral-500'
-          }`}>
-          Status *
-        </label>
-        <select
-          value={formData.status}
-          onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-          className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${isDark
-              ? 'bg-neutral-900 border-white/10 focus:border-green-500'
-              : 'bg-neutral-50 border-neutral-300 focus:border-green-500'
-            }`}
-          disabled={submitting}
-        >
-          <option value="Active">Active</option>
-          <option value="Sold">Sold</option>
-          <option value="Deceased">Deceased</option>
-        </select>
-      </div>
-
-      {/* Health Status */}
-      <div>
-        <label className={`block text-[11px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${isDark ? 'text-neutral-400' : 'text-neutral-500'
-          }`}>
-          Health Status *
-        </label>
-        <select
-          value={formData.healthStatus}
-          onChange={(e) => setFormData({ ...formData, healthStatus: e.target.value })}
-          className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${isDark
-              ? 'bg-neutral-900 border-white/10 focus:border-green-500'
-              : 'bg-neutral-50 border-neutral-300 focus:border-green-500'
-            }`}
-          disabled={submitting}
-        >
-          <option value="Healthy">Healthy</option>
-          <option value="Sick">Sick</option>
-        </select>
-      </div>
-
-      {/* Error alert */}
-      {formError && (
-        <div className={`flex items-start gap-3 p-4 border ${isDark ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-red-50 border-red-200 text-red-700'}`}>
-          <span className="text-lg leading-none">⚠</span>
-          <p className="text-xs font-medium leading-relaxed">{formError}</p>
-        </div>
-      )}
-
-      {/* Buttons */}
-      <div className="flex gap-3 pt-6">
-        <button
-          type="button"
-          onClick={handleCloseForm}
-          className={`cursor-pointer flex-1 px-6 py-3.5 border font-bold text-[11px] uppercase tracking-widest transition-all ${isDark
-              ? 'bg-neutral-800 hover:bg-neutral-700 border-neutral-700'
-              : 'bg-white hover:bg-neutral-50 border-neutral-300'
-            }`}
-          disabled={submitting}
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={submitting}
-          className={`cursor-pointer flex-1 px-6 py-3.5 border font-bold text-[11px] uppercase tracking-widest transition-all ${submitting
-              ? 'bg-green-400 cursor-not-allowed'
-              : 'bg-green-600 hover:bg-green-700'
-            } text-white border-green-600`}
-        >
-          {submitting ? 'Saving...' : (editingAnimal ? 'Update' : 'Add')}
-        </button>
-      </div>
-    </form>
-  </div>
-      </div >
-
-  {/* ENHANCED DELETE CONFIRMATION MODAL */ }
-{
-  deleteConfirm && (
-    <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-      <div className={`relative max-w-md w-full p-8 border ${isDark ? 'bg-neutral-900 border-white/10' : 'bg-white border-neutral-300'
-        } shadow-2xl`}>
-        <div className="text-center">
-          <div className={`inline-flex p-5 border mb-5 ${isDark ? 'bg-red-500/10 border-red-500/20' : 'bg-red-50 border-red-200'
-            }`}>
-            <Trash2 className={`w-10 h-10 ${isDark ? 'text-red-400' : 'text-red-600'}`} />
-          </div>
-          <h3 className={`${spaceGrotesk.className} text-2xl font-bold uppercase tracking-tight mb-3`}>
-            Delete Animal?
-          </h3>
-          <p className={`text-sm font-medium mb-8 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
-            Are you sure you want to delete this {deleteConfirm.breed}? This action cannot be undone.
-          </p>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setDeleteConfirm(null)}
-              className={`cursor-pointer flex-1 px-6 py-3.5 border font-bold text-[11px] uppercase tracking-widest transition-all ${isDark
-                  ? 'bg-neutral-800 hover:bg-neutral-700 border-neutral-700'
-                  : 'bg-white hover:bg-neutral-50 border-neutral-300'
-                }`}
-              disabled={submitting}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => handleDelete(deleteConfirm.id)}
-              disabled={submitting}
-              className={`cursor-pointer flex-1 px-6 py-3.5 border font-bold text-[11px] uppercase tracking-widest transition-all ${submitting
-                  ? 'bg-red-400 cursor-not-allowed'
-                  : 'bg-red-600 hover:bg-red-700'
-                } text-white border-red-600`}
-            >
-              {submitting ? 'Deleting...' : 'Delete'}
-            </button>
-          </div>
-        </div>
-        <CornerBrackets />
-      </div>
-    </div>
-  )
-}
-
-{/* ENHANCED VIEW ANIMAL MODAL */ }
-{
-  viewingAnimal && (
-    <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-      <div className={`relative max-w-3xl w-full p-8 border ${isDark ? 'bg-neutral-900 border-white/10' : 'bg-white border-neutral-300'
-        } shadow-2xl`}>
-        <div>
-          {/* Header */}
-          <div className={`flex items-center justify-between mb-8 pb-6 border-b ${isDark ? 'border-white/10' : 'border-neutral-200'}`}>
+          >
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <div className={`h-[2px] w-6 ${isDark ? 'bg-green-500' : 'bg-green-600'}`} />
-                <span className={`text-[9px] font-mono font-bold uppercase tracking-[0.3em] ${isDark ? 'text-green-400' : 'text-green-600'
-                  }`}>
-                  ANIMAL_PROFILE
+                <div
+                  className={`h-[2px] w-6 ${isDark ? "bg-green-500" : "bg-green-600"}`}
+                />
+                <span
+                  className={`text-[9px] font-mono font-bold uppercase tracking-[0.3em] ${
+                    isDark ? "text-green-400" : "text-green-600"
+                  }`}
+                >
+                  {editingAnimal ? "EDIT_MODE" : "CREATE_MODE"}
                 </span>
               </div>
-              <h3 className={`${spaceGrotesk.className} text-3xl font-bold uppercase tracking-tight mb-1`}>
-                Animal Details
-              </h3>
-              <p className={`text-sm font-medium ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>
-                Complete information about this animal
+              <h2
+                className={`${spaceGrotesk.className} text-3xl font-bold uppercase tracking-tight mb-1`}
+              >
+                {editingAnimal ? "Edit Animal" : "Add Animal"}
+              </h2>
+              <p
+                className={`text-sm font-medium ${
+                  isDark ? "text-neutral-500" : "text-neutral-400"
+                }`}
+              >
+                {editingAnimal
+                  ? "Update animal information"
+                  : "Register a new animal"}
               </p>
             </div>
             <button
-              onClick={() => setViewingAnimal(null)}
-              className={`cursor-pointer p-2.5 border transition-all ${isDark
-                  ? 'hover:bg-white/10 border-white/10 hover:border-white/20'
-                  : 'hover:bg-neutral-50 border-neutral-200 hover:border-neutral-300'
-                }`}
+              onClick={handleCloseForm}
+              className={`p-2.5 border transition-all ${
+                isDark
+                  ? "hover:bg-white/10 border-white/10 hover:border-white/20"
+                  : "hover:bg-neutral-50 border-neutral-200 hover:border-neutral-300"
+              }`}
+              disabled={submitting}
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Details Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Shed */}
             <div>
-              <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
-                }`}>
-                Breed
-              </label>
-              <p className={`text-lg font-bold ${spaceGrotesk.className}`}>{viewingAnimal.breed}</p>
-            </div>
-
-
-            <div>
-              <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
-                }`}>
-                Date of Birth
-              </label>
-              <p className="text-sm font-medium">{formatDate(viewingAnimal.dateOfBirth)}</p>
-            </div>
-
-            <div>
-              <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
-                }`}>
-                Animal Type
-              </label>
-              <p className="text-sm font-medium">{viewingAnimal.animalType}</p>
-            </div>
-
-            <div>
-              <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
-                }`}>
-                Gender
-              </label>
-              <p className="text-sm font-medium">{viewingAnimal.gender}</p>
-            </div>
-
-            <div>
-              <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
-                }`}>
-                Shed Name
-              </label>
-              <p className="text-sm font-medium">{viewingAnimal.shedName || 'N/A'}</p>
-            </div>
-
-
-            <div>
-              <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
-                }`}>
-                Status
-              </label>
-              <span className={`inline-flex items-center px-3 py-1 border text-[10px] font-bold font-mono uppercase tracking-wider ${viewingAnimal.status === 'Active'
-                  ? isDark
-                    ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                    : 'bg-green-50 text-green-700 border-green-200'
-                  : viewingAnimal.status === 'Sold'
-                    ? isDark
-                      ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                      : 'bg-blue-50 text-blue-700 border-blue-200'
-                    : isDark
-                      ? 'bg-neutral-500/10 text-neutral-400 border-neutral-500/20'
-                      : 'bg-neutral-100 text-neutral-600 border-neutral-200'
-                }`}>
-                {viewingAnimal.status}
-              </span>
-            </div>
-
-            <div>
-              <label className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${isDark ? 'text-neutral-500' : 'text-neutral-400'
-                }`}>
-                Health Status
-              </label>
-              <span className={`inline-flex items-center px-3 py-1 border text-[10px] font-bold font-mono uppercase tracking-wider ${viewingAnimal.healthStatus === 'Healthy'
-                  ? isDark
-                    ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                    : 'bg-green-50 text-green-700 border-green-200'
-                  : viewingAnimal.healthStatus === 'Sick'
-                    ? isDark
-                      ? 'bg-red-500/10 text-red-400 border-red-500/20'
-                      : 'bg-red-50 text-red-700 border-red-200'
-                    : isDark
-                      ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                      : 'bg-amber-50 text-amber-700 border-amber-200'
-                }`}>
-                {viewingAnimal.healthStatus}
-              </span>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className={`flex gap-3 pt-4 border-t ${isDark ? 'border-white/10' : 'border-neutral-200'}`}>
-            <button
-              onClick={() => setViewingAnimal(null)}
-              className={`flex-1 px-6 py-3.5 border font-bold text-[11px] uppercase tracking-widest transition-all ${isDark
-                  ? 'bg-neutral-800 hover:bg-neutral-700 border-neutral-700'
-                  : 'bg-white hover:bg-neutral-50 border-neutral-300'
+              <label
+                className={`block text-[11px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
+                  isDark ? "text-neutral-400" : "text-neutral-500"
                 }`}
-            >
-              Close
-            </button>
-            <button
-              onClick={() => {
-                handleOpenForm(viewingAnimal);
-                setViewingAnimal(null);
-              }}
-              className="cursor-pointer flex-1 px-6 py-3.5 border font-bold text-[11px] uppercase tracking-widest bg-green-600 hover:bg-green-700 text-white border-green-600 transition-all"
-            >
-              Edit Animal
-            </button>
+              >
+                Shed Name *
+              </label>
+              <select
+                required
+                value={formData.shedId}
+                onChange={(e) => {
+                  setFormError(null);
+                  setFormData({ ...formData, shedId: e.target.value });
+                }}
+                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
+                  isDark
+                    ? "bg-neutral-900 border-white/10 focus:border-green-500"
+                    : "bg-neutral-50 border-neutral-300 focus:border-green-500"
+                }`}
+                disabled={submitting}
+              >
+                <option value="">Select a Shed</option>
+                {sheds.map((shed) => {
+                  const info = shedCapacityMap[shed.id];
+                  const available = info ? info.capacity - info.currentCount : null;
+                  const isFull = available !== null && available <= 0;
+                  return (
+                    <option
+                      key={shed.id}
+                      value={shed.id}
+                      disabled={isFull}
+                    >
+                      {shed.shedName || shed.name}
+                      {info
+                        ? ` (${info.currentCount}/${info.capacity}${
+                            isFull ? " - FULL" : ""
+                          })`
+                        : ""}
+                    </option>
+                  );
+                })}
+              </select>
+              {formData.shedId && shedCapacityMap[formData.shedId] && (() => {
+                const info = shedCapacityMap[formData.shedId];
+                const available = info.capacity - info.currentCount;
+                const isFull = available <= 0;
+                return (
+                  <div
+                    className={`mt-2 flex items-center gap-2 text-xs font-mono font-bold ${
+                      isFull
+                        ? "text-red-500"
+                        : available <= 2
+                        ? "text-amber-500"
+                        : "text-green-600"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block w-2 h-2 rounded-full ${
+                        isFull
+                          ? "bg-red-500"
+                          : available <= 2
+                          ? "bg-amber-500"
+                          : "bg-green-500"
+                      }`}
+                    />
+                    {isFull
+                      ? "SHED FULL — No available slots"
+                      : `${available} slot${
+                          available === 1 ? "" : "s"
+                        } available of ${info.capacity} capacity`}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Date of Birth */}
+            <div>
+              <label
+                className={`block text-[11px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
+                  isDark ? "text-neutral-400" : "text-neutral-500"
+                }`}
+              >
+                Date of Birth *
+              </label>
+              <input
+                type="date"
+                required
+                value={formData.dateOfBirth}
+                onChange={(e) =>
+                  setFormData({ ...formData, dateOfBirth: e.target.value })
+                }
+                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
+                  isDark
+                    ? "bg-neutral-900 border-white/10 focus:border-green-500"
+                    : "bg-neutral-50 border-neutral-300 focus:border-green-500"
+                }`}
+                disabled={submitting}
+              />
+            </div>
+
+            {/* Animal Type */}
+            <div>
+              <label
+                className={`block text-[11px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
+                  isDark ? "text-neutral-400" : "text-neutral-500"
+                }`}
+              >
+                Animal Type *
+              </label>
+              <select
+                value={formData.animalType}
+                onChange={(e) => {
+                  const newType = e.target.value;
+                  const availableBreeds = breeds.filter(
+                    (b) => (b.species || b.animalType) === newType
+                  );
+                  const firstBreed = availableBreeds.length > 0 ? availableBreeds[0] : null;
+                  setFormData({
+                    ...formData,
+                    animalType: newType,
+                    breedId: firstBreed ? firstBreed.id || "" : "",
+                    breed: firstBreed ? firstBreed.name || firstBreed : "",
+                  });
+                }}
+                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
+                  isDark
+                    ? "bg-neutral-900 border-white/10 focus:border-green-500"
+                    : "bg-neutral-50 border-neutral-300 focus:border-green-500"
+                }`}
+                disabled={submitting}
+              >
+                {species.map((sp) => (
+                  <option key={sp.id || sp.name || sp} value={sp.name || sp}>
+                    {sp.name || sp}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Gender */}
+            <div>
+              <label
+                className={`block text-[11px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
+                  isDark ? "text-neutral-400" : "text-neutral-500"
+                }`}
+              >
+                Gender *
+              </label>
+              <select
+                value={formData.gender}
+                onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
+                  isDark
+                    ? "bg-neutral-900 border-white/10 focus:border-green-500"
+                    : "bg-neutral-50 border-neutral-300 focus:border-green-500"
+                }`}
+                disabled={submitting}
+              >
+                <option value="Female">Female</option>
+                <option value="Male">Male</option>
+              </select>
+            </div>
+
+            {/* Breed */}
+            <div>
+              <label
+                className={`block text-[11px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
+                  isDark ? "text-neutral-400" : "text-neutral-500"
+                }`}
+              >
+                Breed *
+              </label>
+              <select
+                required
+                value={formData.breedId}
+                onChange={(e) => {
+                  const selected = breeds.find(
+                    (b) => String(b.id) === e.target.value
+                  );
+                  setFormData({
+                    ...formData,
+                    breedId: e.target.value,
+                    breed: selected ? selected.name || e.target.value : "",
+                  });
+                }}
+                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
+                  isDark
+                    ? "bg-neutral-900 border-white/10 focus:border-green-500"
+                    : "bg-neutral-50 border-neutral-300 focus:border-green-500"
+                }`}
+                disabled={submitting}
+              >
+                <option value="">Select a Breed</option>
+                {breeds
+                  .filter((b) => (b.species || b.animalType) === formData.animalType)
+                  .map((br) => (
+                    <option key={br.id || br.name || br} value={br.id || br.name}>
+                      {br.name || br}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            {/* Registration Date (readonly) */}
+            <div>
+              <label
+                className={`block text-[11px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
+                  isDark ? "text-neutral-400" : "text-neutral-500"
+                }`}
+              >
+                Registration Date
+              </label>
+              <input
+                type="date"
+                readOnly
+                value={formData.registrationDate}
+                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium cursor-not-allowed opacity-70 ${
+                  isDark
+                    ? "bg-neutral-900 border-white/10"
+                    : "bg-neutral-50 border-neutral-300"
+                }`}
+              />
+            </div>
+
+            {/* Status */}
+            <div>
+              <label
+                className={`block text-[11px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
+                  isDark ? "text-neutral-400" : "text-neutral-500"
+                }`}
+              >
+                Status *
+              </label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
+                  isDark
+                    ? "bg-neutral-900 border-white/10 focus:border-green-500"
+                    : "bg-neutral-50 border-neutral-300 focus:border-green-500"
+                }`}
+                disabled={submitting}
+              >
+                <option value="Active">Active</option>
+                <option value="Sold">Sold</option>
+                <option value="Deceased">Deceased</option>
+              </select>
+            </div>
+
+            {/* Health Status */}
+            <div>
+              <label
+                className={`block text-[11px] font-mono font-bold uppercase tracking-[0.25em] mb-3 ${
+                  isDark ? "text-neutral-400" : "text-neutral-500"
+                }`}
+              >
+                Health Status *
+              </label>
+              <select
+                value={formData.healthStatus}
+                onChange={(e) =>
+                  setFormData({ ...formData, healthStatus: e.target.value })
+                }
+                className={`w-full px-4 py-3.5 border outline-none transition-all font-medium ${
+                  isDark
+                    ? "bg-neutral-900 border-white/10 focus:border-green-500"
+                    : "bg-neutral-50 border-neutral-300 focus:border-green-500"
+                }`}
+                disabled={submitting}
+              >
+                <option value="Healthy">Healthy</option>
+                <option value="Sick">Sick</option>
+              </select>
+            </div>
+
+            {formError && (
+              <div
+                className={`flex items-start gap-3 p-4 border ${
+                  isDark
+                    ? "bg-red-500/10 border-red-500/20 text-red-400"
+                    : "bg-red-50 border-red-200 text-red-700"
+                }`}
+              >
+                <span className="text-lg leading-none">⚠</span>
+                <p className="text-xs font-medium leading-relaxed">{formError}</p>
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-6">
+              <button
+                type="button"
+                onClick={handleCloseForm}
+                className={`cursor-pointer flex-1 px-6 py-3.5 border font-bold text-[11px] uppercase tracking-widest transition-all ${
+                  isDark
+                    ? "bg-neutral-800 hover:bg-neutral-700 border-neutral-700"
+                    : "bg-white hover:bg-neutral-50 border-neutral-300"
+                }`}
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className={`cursor-pointer flex-1 px-6 py-3.5 border font-bold text-[11px] uppercase tracking-widest transition-all ${
+                  submitting
+                    ? "bg-green-400 cursor-not-allowed"
+                    : "bg-green-600 hover:bg-green-700"
+                } text-white border-green-600`}
+              >
+                {submitting ? "Saving..." : editingAnimal ? "Update" : "Add"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+          <div
+            className={`relative max-w-md w-full p-8 border ${
+              isDark
+                ? "bg-neutral-900 border-white/10"
+                : "bg-white border-neutral-300"
+            } shadow-2xl`}
+          >
+            <div className="text-center">
+              <div
+                className={`inline-flex p-5 border mb-5 ${
+                  isDark
+                    ? "bg-red-500/10 border-red-500/20"
+                    : "bg-red-50 border-red-200"
+                }`}
+              >
+                <Trash2
+                  className={`w-10 h-10 ${isDark ? "text-red-400" : "text-red-600"}`}
+                />
+              </div>
+              <h3
+                className={`${spaceGrotesk.className} text-2xl font-bold uppercase tracking-tight mb-3`}
+              >
+                Delete Animal?
+              </h3>
+              <p
+                className={`text-sm font-medium mb-8 ${
+                  isDark ? "text-neutral-400" : "text-neutral-500"
+                }`}
+              >
+                Are you sure you want to delete this {deleteConfirm.breed}? This action
+                cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteConfirm(null)}
+                  className={`cursor-pointer flex-1 px-6 py-3.5 border font-bold text-[11px] uppercase tracking-widest transition-all ${
+                    isDark
+                      ? "bg-neutral-800 hover:bg-neutral-700 border-neutral-700"
+                      : "bg-white hover:bg-neutral-50 border-neutral-300"
+                  }`}
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDelete(deleteConfirm.id)}
+                  disabled={submitting}
+                  className={`cursor-pointer flex-1 px-6 py-3.5 border font-bold text-[11px] uppercase tracking-widest transition-all ${
+                    submitting
+                      ? "bg-red-400 cursor-not-allowed"
+                      : "bg-red-600 hover:bg-red-700"
+                  } text-white border-red-600`}
+                >
+                  {submitting ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </div>
+            <CornerBrackets />
           </div>
         </div>
-        <CornerBrackets />
-      </div>
+      )}
+
+      {/* View Animal Modal */}
+      {viewingAnimal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+          <div
+            className={`relative max-w-3xl w-full p-8 border ${
+              isDark
+                ? "bg-neutral-900 border-white/10"
+                : "bg-white border-neutral-300"
+            } shadow-2xl`}
+          >
+            <div>
+              <div
+                className={`flex items-center justify-between mb-8 pb-6 border-b ${
+                  isDark ? "border-white/10" : "border-neutral-200"
+                }`}
+              >
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div
+                      className={`h-[2px] w-6 ${
+                        isDark ? "bg-green-500" : "bg-green-600"
+                      }`}
+                    />
+                    <span
+                      className={`text-[9px] font-mono font-bold uppercase tracking-[0.3em] ${
+                        isDark ? "text-green-400" : "text-green-600"
+                      }`}
+                    >
+                      ANIMAL_PROFILE
+                    </span>
+                  </div>
+                  <h3
+                    className={`${spaceGrotesk.className} text-3xl font-bold uppercase tracking-tight mb-1`}
+                  >
+                    Animal Details
+                  </h3>
+                  <p
+                    className={`text-sm font-medium ${
+                      isDark ? "text-neutral-500" : "text-neutral-400"
+                    }`}
+                  >
+                    Complete information about this animal
+                  </p>
+                </div>
+                <button
+                  onClick={() => setViewingAnimal(null)}
+                  className={`cursor-pointer p-2.5 border transition-all ${
+                    isDark
+                      ? "hover:bg-white/10 border-white/10 hover:border-white/20"
+                      : "hover:bg-neutral-50 border-neutral-200 hover:border-neutral-300"
+                  }`}
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div>
+                  <label
+                    className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${
+                      isDark ? "text-neutral-500" : "text-neutral-400"
+                    }`}
+                  >
+                    Breed
+                  </label>
+                  <p className={`text-lg font-bold ${spaceGrotesk.className}`}>
+                    {viewingAnimal.breed}
+                  </p>
+                </div>
+                <div>
+                  <label
+                    className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${
+                      isDark ? "text-neutral-500" : "text-neutral-400"
+                    }`}
+                  >
+                    Date of Birth
+                  </label>
+                  <p className="text-sm font-medium">
+                    {formatDate(viewingAnimal.dateOfBirth)}
+                  </p>
+                </div>
+                <div>
+                  <label
+                    className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${
+                      isDark ? "text-neutral-500" : "text-neutral-400"
+                    }`}
+                  >
+                    Animal Type
+                  </label>
+                  <p className="text-sm font-medium">{viewingAnimal.animalType}</p>
+                </div>
+                <div>
+                  <label
+                    className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${
+                      isDark ? "text-neutral-500" : "text-neutral-400"
+                    }`}
+                  >
+                    Gender
+                  </label>
+                  <p className="text-sm font-medium">{viewingAnimal.gender}</p>
+                </div>
+                <div>
+                  <label
+                    className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${
+                      isDark ? "text-neutral-500" : "text-neutral-400"
+                    }`}
+                  >
+                    Shed Name
+                  </label>
+                  <p className="text-sm font-medium">{viewingAnimal.shedName || "N/A"}</p>
+                </div>
+                <div>
+                  <label
+                    className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${
+                      isDark ? "text-neutral-500" : "text-neutral-400"
+                    }`}
+                  >
+                    Status
+                  </label>
+                  <span
+                    className={`inline-flex items-center px-3 py-1 border text-[10px] font-bold font-mono uppercase tracking-wider ${
+                      viewingAnimal.status === "Active"
+                        ? isDark
+                          ? "bg-green-500/10 text-green-400 border-green-500/20"
+                          : "bg-green-50 text-green-700 border-green-200"
+                        : viewingAnimal.status === "Sold"
+                        ? isDark
+                          ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                          : "bg-blue-50 text-blue-700 border-blue-200"
+                        : isDark
+                        ? "bg-neutral-500/10 text-neutral-400 border-neutral-500/20"
+                        : "bg-neutral-100 text-neutral-600 border-neutral-200"
+                    }`}
+                  >
+                    {viewingAnimal.status}
+                  </span>
+                </div>
+                <div>
+                  <label
+                    className={`block text-[9px] font-mono font-bold uppercase tracking-[0.25em] mb-2 ${
+                      isDark ? "text-neutral-500" : "text-neutral-400"
+                    }`}
+                  >
+                    Health Status
+                  </label>
+                  <span
+                    className={`inline-flex items-center px-3 py-1 border text-[10px] font-bold font-mono uppercase tracking-wider ${
+                      viewingAnimal.healthStatus === "Healthy"
+                        ? isDark
+                          ? "bg-green-500/10 text-green-400 border-green-500/20"
+                          : "bg-green-50 text-green-700 border-green-200"
+                        : viewingAnimal.healthStatus === "Sick"
+                        ? isDark
+                          ? "bg-red-500/10 text-red-400 border-red-500/20"
+                          : "bg-red-50 text-red-700 border-red-200"
+                        : isDark
+                        ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                        : "bg-amber-50 text-amber-700 border-amber-200"
+                    }`}
+                  >
+                    {viewingAnimal.healthStatus}
+                  </span>
+                </div>
+              </div>
+
+              <div
+                className={`flex gap-3 pt-4 border-t ${
+                  isDark ? "border-white/10" : "border-neutral-200"
+                }`}
+              >
+                <button
+                  onClick={() => setViewingAnimal(null)}
+                  className={`flex-1 px-6 py-3.5 border font-bold text-[11px] uppercase tracking-widest transition-all ${
+                    isDark
+                      ? "bg-neutral-800 hover:bg-neutral-700 border-neutral-700"
+                      : "bg-white hover:bg-neutral-50 border-neutral-300"
+                  }`}
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    handleOpenForm(viewingAnimal);
+                    setViewingAnimal(null);
+                  }}
+                  className="cursor-pointer flex-1 px-6 py-3.5 border font-bold text-[11px] uppercase tracking-widest bg-green-600 hover:bg-green-700 text-white border-green-600 transition-all"
+                >
+                  Edit Animal
+                </button>
+              </div>
+            </div>
+            <CornerBrackets />
+          </div>
+        </div>
+      )}
     </div>
-  )
-}
-    </div >
   );
 }

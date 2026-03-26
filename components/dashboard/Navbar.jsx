@@ -165,9 +165,9 @@ export default function Navbar({
           expandedState: livestockExpanded,
           setExpandedState: setLivestockExpanded,
           children: [
-            { name: 'Animals', route: '/dashboard/livestockmanagement/animal/animals' },
             { name: 'Species Management', route: '/dashboard/livestockmanagement/species' },
             { name: 'Breeds Management', route: '/dashboard/livestockmanagement/breeds' },
+            { name: 'Animals', route: '/dashboard/livestockmanagement/animal/animals' },
             { name: 'Health & Vaccination', route: '/dashboard/livestockmanagement/health/veterinarians' },
             { name: 'Reproduction', route: '/dashboard/livestockmanagement/reproduction/dashboard' }
           ]
