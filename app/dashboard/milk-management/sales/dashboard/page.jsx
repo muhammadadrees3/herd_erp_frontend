@@ -240,6 +240,9 @@ export default function SalesDashboard() {
                 Dashboard
               </Link>
               <Link 
+
+
+
                 href="/dashboard/milk-management/sales/records"
                 className={`cursor-pointer flex items-center gap-2 px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
                   isActive('/dashboard/milk-management/sales/records')
